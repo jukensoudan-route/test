@@ -52,7 +52,8 @@ main{max-width:1200px;margin:auto;padding:14px}
 
   .color-picker{position:relative;flex:0 0 auto}
   .color-tile{width:26px;height:26px;border:1px solid rgba(0,0,0,.16);border-radius:6px;padding:0;cursor:pointer;display:block}
-  .color-tile[data-color="blue"],.color-choice[data-color="blue"]{background:#2491d6}
+  .color-tile[data-color="white"],.color-choice[data-color="white"]{background:#ffffff;border:1px solid #bfc7cf}
+.color-tile[data-color="blue"],.color-choice[data-color="blue"]{background:#2491d6}
   .color-tile[data-color="red"],.color-choice[data-color="red"]{background:#e0574a}
   .color-tile[data-color="green"],.color-choice[data-color="green"]{background:#1ac6b2}
   .color-tile[data-color="pink"],.color-choice[data-color="pink"]{background:#e97fa8}
@@ -127,6 +128,39 @@ main{max-width:1200px;margin:auto;padding:14px}
   .excel-todo{font-size:7pt;line-height:1.2;margin-top:1mm;color:#444}
   @page{size:A4 landscape;margin:0}
 }
+
+.todo-panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}
+.todo-panel{background:#fff;border:1px solid #d9e2e6;border-radius:10px;padding:10px}
+.todo-panel h3{margin:0 0 8px;font-size:14px}
+.todo-panel-list{display:grid;gap:6px;max-height:180px;overflow:auto}
+.todo-panel-item{display:flex;align-items:center;gap:7px;padding:6px 7px;border:1px solid #e5ecef;border-radius:7px;background:#fbfdfe}
+.todo-panel-item input[type="checkbox"]{width:16px;height:16px}
+.todo-panel-item .text{flex:1;min-width:0;font-size:12px;word-break:break-word}
+.todo-panel-empty{font-size:12px;color:#7a858a;padding:8px}
+@media(max-width:700px){.todo-panels{grid-template-columns:1fr}.todo-panel-list{max-height:150px}}
+
+
+.todo-combo{position:relative;flex:1;min-width:0}
+.todo-combo input[type="text"]{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid #cfd9dd;
+  border-radius:7px;
+  padding:8px 30px 8px 9px;
+  font:12px inherit;
+  background:#fff;
+}
+.todo-combo::after{
+  content:"▾";
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  pointer-events:none;
+  color:#65737a;
+  font-size:11px;
+}
+
 </style>
 </head>
 <body>
@@ -153,7 +187,18 @@ main{max-width:1200px;margin:auto;padding:14px}
     <button id="nextBtn">翌月 →</button>
     <button id="todayBtn">今日</button>
   </div>
-  <div class="calendar">
+  
+<div class="todo-panels">
+  <section class="todo-panel">
+    <h3>TODOリスト</h3>
+    <div id="sharedTodoList" class="todo-panel-list"></div>
+  </section>
+  <section class="todo-panel">
+    <h3>完了リスト</h3>
+    <div id="sharedDoneList" class="todo-panel-list"></div>
+  </section>
+</div>
+<div class="calendar">
     <div class="week-head">
       <div class="sun">日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="sat">土</div>
     </div>
@@ -232,11 +277,11 @@ function normalizeDayTodos(dayData){
 }
 
 
-function colorPickerHtml(color='blue'){
+function colorPickerHtml(color='white'){
   return `<div class="color-picker" data-color="${color}">
     <button type="button" class="color-tile" data-color="${color}" aria-label="色を選択"></button>
     <div class="color-palette">
-      ${['blue','red','green','pink'].map(c=>`<button type="button" class="color-choice ${c===color?'selected':''}" data-color="${c}" aria-label="${c}"></button>`).join('')}
+      ${['white','blue','red','green','pink'].map(c=>`<button type="button" class="color-choice ${c===color?'selected':''}" data-color="${c}" aria-label="${c}"></button>`).join('')}
     </div>
   </div>`;
 }
@@ -261,6 +306,7 @@ function setupColorPicker(picker,onChange){
 document.addEventListener('click',()=>document.querySelectorAll('.color-picker.open').forEach(p=>p.classList.remove('open')));
 
 const EVENT_COLORS={
+  white:{label:'',hex:'#ffffff'},
   blue:{label:'青',hex:'#2491d6'},
   red:{label:'赤',hex:'#e0574a'},
   green:{label:'緑',hex:'#1ac6b2'},
@@ -269,12 +315,12 @@ const EVENT_COLORS={
 function normalizeEvents(dayData){
   if(!Array.isArray(dayData.events)){
     const lines=String(dayData.schedule||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    dayData.events=lines.map(text=>({text,color:'blue'}));
+    dayData.events=lines.map(text=>({text,color:'white'}));
   }
   dayData.events=dayData.events
     .filter(e=>e&&typeof e.text==='string')
-    .map(e=>({text:e.text,color:EVENT_COLORS[e.color]?e.color:'blue'}));
-  while(dayData.events.length<4) dayData.events.push({text:'',color:'blue'});
+    .map(e=>({text:e.text,color:EVENT_COLORS[e.color]?e.color:'white'}));
+  while(dayData.events.length<4) dayData.events.push({text:'',color:'white'});
 }
 function syncScheduleFromEvents(dayData){
   normalizeEvents(dayData);
@@ -375,7 +421,48 @@ async function push(){
   finally{syncing=false}
 }
 
+
+function renderSharedTodoPanels(){
+  const todoBox=document.getElementById('sharedTodoList');
+  const doneBox=document.getElementById('sharedDoneList');
+  if(!todoBox||!doneBox) return;
+
+  const active=(todosDB.items||[]).filter(t=>!t.done);
+  const done=(todosDB.items||[]).filter(t=>t.done);
+
+  const makeItem=(item,isDone)=>{
+    const row=document.createElement('div');
+    row.className='todo-panel-item';
+    row.innerHTML=`<input type="checkbox" ${isDone?'checked':''}><div class="text">${escapeHtml(item.text||'')}</div>`;
+    const check=row.querySelector('input[type="checkbox"]');
+    check.addEventListener('change',async()=>{
+      item.done=check.checked;
+      saveLocal();
+      renderSharedTodoPanels();
+      if(typeof render==='function') render();
+      if(typeof push==='function') await push();
+    });
+    return row;
+  };
+
+  todoBox.innerHTML='';
+  doneBox.innerHTML='';
+
+  if(active.length===0){
+    todoBox.innerHTML='<div class="todo-panel-empty">未完了のTODOはありません</div>';
+  }else{
+    active.forEach(item=>todoBox.appendChild(makeItem(item,false)));
+  }
+
+  if(done.length===0){
+    doneBox.innerHTML='<div class="todo-panel-empty">完了したTODOはありません</div>';
+  }else{
+    done.forEach(item=>doneBox.appendChild(makeItem(item,true)));
+  }
+}
+
 function render(){
+  renderSharedTodoPanels();
   document.getElementById('monthLabel').textContent=`${shown.getFullYear()}年 ${shown.getMonth()+1}月`;
   const root=document.getElementById('days');root.innerHTML='';
   const first=new Date(shown.getFullYear(),shown.getMonth(),1);
@@ -411,22 +498,26 @@ function openEdit(d){
     const row=document.createElement('div');
     row.className='event-edit-row';
     row.dataset.color=event.color;
-    row.innerHTML=`${colorPickerHtml(event.color)}<input type="text" value="${escapeHtml(event.text||'')}" placeholder="予定 ${i+1}">`;
+    row.innerHTML=`${colorPickerHtml(event.color)}<input type="text" value="${escapeHtml(event.text||'')}" placeholder="">`;
     setupColorPicker(row.querySelector('.color-picker'),color=>row.dataset.color=color);
     eventList.appendChild(row);
   });
   const list=document.getElementById('todoEditList');list.innerHTML='';
   dayData.todos.forEach((t,i)=>{
     const row=document.createElement('div');row.className='todo-row';
+    const listId=`todoOptions_${selectedDate.getFullYear()}_${selectedDate.getMonth()+1}_${selectedDate.getDate()}_${i}`;
     row.innerHTML=`<input type="checkbox" ${t.checked?'checked':''}>
-      <select>${masterTodoOptions(t.todoId)}</select>
-      <input type="text" value="${escapeHtml(t.text||'')}" placeholder="新しいTODO">`;
-    const select=row.querySelector('select');
+      <div class="todo-combo">
+        <input type="text" list="${listId}" value="${escapeHtml(t.text||'')}" placeholder="">
+        <datalist id="${listId}">
+          ${(todosDB.items||[]).filter(x=>!x.done).map(x=>`<option value="${escapeHtml(x.text||'')}"></option>`).join('')}
+        </datalist>
+      </div>`;
     const input=row.querySelector('input[type="text"]');
-    select.onchange=()=>{
-      const item=todosDB.items.find(x=>x.id===select.value);
-      if(item) input.value=item.text;
-    };
+    input.addEventListener('change',()=>{
+      const found=(todosDB.items||[]).find(x=>!x.done&&String(x.text||'').trim()===input.value.trim());
+      if(found) t.todoId=found.id;
+    });
     list.appendChild(row);
   });
   document.getElementById('modal').classList.add('open');
@@ -448,11 +539,15 @@ document.getElementById('saveBtn').onclick=async()=>{
   syncScheduleFromEvents(dayData);
 
   const rows=[...document.querySelectorAll('#todoEditList .todo-row')];
-  dayData.todos=rows.map((r,i)=>({
-    checked:r.querySelector('input[type="checkbox"]').checked,
-    text:r.querySelector('input[type="text"]').value,
-    todoId:r.querySelector('select').value||previousTodos[i]?.todoId||null
-  }));
+  dayData.todos=rows.map((r,i)=>{
+    const text=r.querySelector('input[type="text"]').value.trim();
+    const existing=(todosDB.items||[]).find(x=>!x.done&&String(x.text||'').trim()===text);
+    return {
+      checked:r.querySelector('input[type="checkbox"]').checked,
+      text,
+      todoId:existing?.id||previousTodos[i]?.todoId||null
+    };
+  });
   dayData.todos.forEach(linkOrCreateTodo);
   syncDayTodosToMaster(dayData,previousTodos);
   saveLocal();closeEdit();render();await push();
