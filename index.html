@@ -293,6 +293,28 @@
   .mini-check .mini-pick:hover { background-color: #e8f7fb; }
   .mini-check input[type="checkbox"]:checked ~ .mini-text { color: #9db2ba; text-decoration: line-through; }
 
+
+  .event-lines{display:flex;flex-direction:column;gap:3px;padding:4px 6px;min-height:101px}
+  .event-line{display:flex;align-items:center;gap:5px;min-height:21px}
+  .event-color{display:none}
+  .color-picker{position:relative;flex:0 0 auto}
+  .color-tile{width:26px;height:26px;border:1px solid rgba(0,0,0,.16);border-radius:6px;padding:0;cursor:pointer;display:block}
+  .color-tile[data-color="blue"],.color-choice[data-color="blue"]{background:#2491d6}
+  .color-tile[data-color="red"],.color-choice[data-color="red"]{background:#e0574a}
+  .color-tile[data-color="green"],.color-choice[data-color="green"]{background:#1ac6b2}
+  .color-tile[data-color="pink"],.color-choice[data-color="pink"]{background:#e97fa8}
+  .color-palette{display:none;position:absolute;left:0;top:31px;z-index:50;background:#fff;border:1px solid #cfd9dd;border-radius:8px;padding:5px;gap:5px;box-shadow:0 5px 16px rgba(0,0,0,.18)}
+  .color-picker.open .color-palette{display:flex}
+  .color-choice{width:25px;height:25px;border:1px solid rgba(0,0,0,.14);border-radius:5px;padding:0;cursor:pointer}
+  .color-choice.selected{outline:2px solid #263238;outline-offset:1px}
+
+  .event-text{flex:1;min-width:0;border:none;border-bottom:1px dotted var(--line-soft);font:11px inherit;padding:3px 4px;background:transparent}
+  .event-text:focus{outline:none;background:#fbfeff}
+  
+  
+  
+  
+
   /* Master TODO box (dedicated page) */
   .master-todo {
     width: 100%;
@@ -662,6 +684,12 @@
     .day-label .dow-jp { font-size: 7pt !important; margin-top: 1mm !important; }
 
     .day-content { flex: 1 1 auto !important; height: 20mm !important; overflow: hidden !important; }
+
+    .event-lines{padding:0 1mm!important;gap:0!important;height:20mm!important;overflow:hidden!important}
+    .event-line{height:5mm!important;min-height:5mm!important;gap:1mm!important;border-left-width:1mm!important}
+    .event-color,.color-picker{display:none!important}
+    .event-text{font-size:8.5pt!important;border-bottom:none!important;padding:0 1mm!important}
+
     .day-content textarea {
       flex: none !important;
       height: 20mm !important;
@@ -945,6 +973,79 @@ if (!window.storage) {
       return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
+
+function colorPickerHtml(color='blue'){
+  return `<div class="color-picker" data-color="${color}">
+    <button type="button" class="color-tile" data-color="${color}" aria-label="色を選択"></button>
+    <div class="color-palette">
+      ${['blue','red','green','pink'].map(c=>`<button type="button" class="color-choice ${c===color?'selected':''}" data-color="${c}" aria-label="${c}"></button>`).join('')}
+    </div>
+  </div>`;
+}
+function setupColorPicker(picker,onChange){
+  const tile=picker.querySelector('.color-tile');
+  const choices=[...picker.querySelectorAll('.color-choice')];
+  tile.addEventListener('click',e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.color-picker.open').forEach(p=>{if(p!==picker)p.classList.remove('open')});
+    picker.classList.toggle('open');
+  });
+  choices.forEach(btn=>btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const color=btn.dataset.color;
+    picker.dataset.color=color;
+    tile.dataset.color=color;
+    choices.forEach(x=>x.classList.toggle('selected',x===btn));
+    picker.classList.remove('open');
+    if(onChange) onChange(color);
+  }));
+}
+document.addEventListener('click',()=>document.querySelectorAll('.color-picker.open').forEach(p=>p.classList.remove('open')));
+
+const EVENT_COLORS={
+  blue:{label:'青',hex:'#2491d6'},
+  red:{label:'赤',hex:'#e0574a'},
+  green:{label:'緑',hex:'#1ac6b2'},
+  pink:{label:'ピンク',hex:'#e97fa8'}
+};
+function normalizeEvents(dayData){
+  if(!Array.isArray(dayData.events)){
+    const lines=String(dayData.schedule||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    dayData.events=lines.map(text=>({text,color:'blue'}));
+  }
+  dayData.events=dayData.events
+    .filter(e=>e&&typeof e.text==='string')
+    .map(e=>({text:e.text,color:EVENT_COLORS[e.color]?e.color:'blue'}));
+  while(dayData.events.length<4) dayData.events.push({text:'',color:'blue'});
+}
+function syncScheduleFromEvents(dayData){
+  normalizeEvents(dayData);
+  dayData.schedule=dayData.events.map(e=>e.text.trim()).filter(Boolean).join('\n');
+}
+function masterTodoOptions(selectedId=''){
+  let html='<option value="">TODOリストから選択</option>';
+  (todosDB.items||[]).filter(t=>!t.done).forEach(t=>{
+    html+=`<option value="${t.id}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.text||'(未入力)')}</option>`;
+  });
+  return html;
+}
+function linkOrCreateTodo(todo){
+  const text=String(todo.text||'').trim();
+  if(!text){todo.todoId=null;return}
+  if(todo.todoId){
+    const linked=todosDB.items.find(t=>t.id===todo.todoId);
+    if(linked){linked.text=text;linked.done=!!todo.checked;return}
+    todo.todoId=null;
+  }
+  let found=todosDB.items.find(t=>!t.done&&String(t.text||'').trim()===text);
+  if(!found){
+    found={id:newTodoId(),text,done:!!todo.checked};
+    todosDB.items.push(found);
+  }
+  todo.todoId=found.id;
+}
+
+
     function autoResizeTextarea(el) {
       el.style.height = 'auto';
       const min = 101;
@@ -995,6 +1096,7 @@ if (!window.storage) {
       // normalize
       if (!Array.isArray(w.days) || w.days.length !== 7) w.days = emptyWeek().days;
       w.days.forEach(d => {
+        normalizeEvents(d);
         if (!Array.isArray(d.todos)) d.todos = [];
         while (d.todos.length < 4) d.todos.push({ checked: false, text: '', todoId: null });
         d.todos.forEach(t => {
@@ -1113,23 +1215,41 @@ if (!window.storage) {
           rowDate.getDate() === today.getDate();
         row.className = 'day-row' + (isToday ? ' today' : '');
         const labelClass = meta.isSat ? 'day-label sat' : (meta.isSun ? 'day-label sun' : 'day-label');
+        normalizeEvents(week.days[i]);
         row.innerHTML = `
           <div class="${labelClass}">
             <span class="date-num">${meta.label}</span>
             <span class="dow-jp">(${meta.dow})</span>
           </div>
           <div class="day-content">
-            <textarea data-day="${i}" placeholder=""></textarea>
+            <div class="event-lines"></div>
           </div>
         `;
         dayColumn.appendChild(row);
-        const ta = row.querySelector('textarea');
-        ta.value = week.days[i].schedule;
-        autoResizeTextarea(ta);
-        ta.addEventListener('input', (e) => {
-          week.days[i].schedule = e.target.value;
-          autoResizeTextarea(ta);
-          scheduleSave();
+        const lines=row.querySelector('.event-lines');
+        week.days[i].events.forEach((event,eventIndex)=>{
+          const line=document.createElement('div');
+          line.className='event-line';
+          line.dataset.color=event.color;
+          line.innerHTML=`
+            ${colorPickerHtml(event.color)}
+            <input class="event-text" type="text" placeholder="">
+          `;
+          const picker=line.querySelector('.color-picker');
+          const input=line.querySelector('.event-text');
+          input.value=event.text;
+          setupColorPicker(picker,color=>{
+            event.color=color;
+            line.dataset.color=color;
+            syncScheduleFromEvents(week.days[i]);
+            scheduleSave();
+          });
+          input.addEventListener('input',e=>{
+            event.text=e.target.value;
+            syncScheduleFromEvents(week.days[i]);
+            scheduleSave();
+          });
+          lines.appendChild(line);
         });
       });
 
@@ -1165,9 +1285,16 @@ if (!window.storage) {
 
           textInput.addEventListener('input', (e) => {
             todo.text = e.target.value;
-            todo.todoId = null; // typed freely, no longer linked to a DB item
-            select.value = '';
+            if(todo.todoId){
+              const linked=todosDB.items.find(t=>t.id===todo.todoId);
+              if(linked) linked.text=todo.text;
+            }
             scheduleSave();
+          });
+          textInput.addEventListener('blur',()=>{
+            linkOrCreateTodo(todo);
+            scheduleSave();
+            render();
           });
 
           select.addEventListener('change', (e) => {

@@ -42,6 +42,29 @@ main{max-width:1500px;margin:auto;padding:14px}
 .dialog h2{font-size:17px;margin:0 0 10px;color:var(--navy)}
 .dialog label{display:block;font-size:11px;font-weight:700;color:var(--slate);margin-bottom:4px}
 .dialog textarea{width:100%;height:150px;border:1px solid #cfd9dd;border-radius:8px;padding:10px;font:13px inherit;resize:vertical}
+
+.event-editor{display:grid;gap:6px}
+.event-edit-row{display:flex;align-items:center;gap:6px;padding-left:0}
+
+
+
+
+  .color-picker{position:relative;flex:0 0 auto}
+  .color-tile{width:26px;height:26px;border:1px solid rgba(0,0,0,.16);border-radius:6px;padding:0;cursor:pointer;display:block}
+  .color-tile[data-color="blue"],.color-choice[data-color="blue"]{background:#2491d6}
+  .color-tile[data-color="red"],.color-choice[data-color="red"]{background:#e0574a}
+  .color-tile[data-color="green"],.color-choice[data-color="green"]{background:#1ac6b2}
+  .color-tile[data-color="pink"],.color-choice[data-color="pink"]{background:#e97fa8}
+  .color-palette{display:none;position:absolute;left:0;top:31px;z-index:50;background:#fff;border:1px solid #cfd9dd;border-radius:8px;padding:5px;gap:5px;box-shadow:0 5px 16px rgba(0,0,0,.18)}
+  .color-picker.open .color-palette{display:flex}
+  .color-choice{width:25px;height:25px;border:1px solid rgba(0,0,0,.14);border-radius:5px;padding:0;cursor:pointer}
+  .color-choice.selected{outline:2px solid #263238;outline-offset:1px}
+
+.event-edit-row input{flex:1;border:1px solid #cfd9dd;border-radius:6px;padding:7px;font:12px inherit}
+.todo-row select{flex:1;border:1px solid #cfd9dd;border-radius:6px;padding:7px;font:11px inherit}
+.todo-row input[type="text"]{flex:1.4}
+.event.blue{border-left-color:#2491d6}.event.red{border-left-color:#e0574a}.event.green{border-left-color:#1ac6b2}.event.pink{border-left-color:#e97fa8}
+
 .todo-list{display:grid;gap:6px;margin-top:6px}
 .todo-row{display:flex;gap:6px;align-items:center}
 .todo-row input[type="checkbox"]{width:16px;height:16px}
@@ -169,7 +192,7 @@ main{max-width:1500px;margin:auto;padding:14px}
   <div class="dialog">
     <h2 id="editTitle"></h2>
     <label for="scheduleEdit">予定</label>
-    <textarea id="scheduleEdit" placeholder="予定を入力"></textarea>
+    <div id="eventEditList" class="event-editor"></div>
     <label>TODO</label>
     <div id="todoEditList" class="todo-list"></div>
     <div class="dialog-actions">
@@ -274,9 +297,10 @@ function render(){
       const now=new Date();
       const today=(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate());
       cell.className='day '+(d.getDay()===0?'sun':d.getDay()===6?'sat':'')+(today?' today':'');
-      const schedule=(dayData.schedule||'').trim();
+      normalizeEvents(dayData);
+      const events=dayData.events.filter(e=>e.text.trim());
       const todoTexts=(dayData.todos||[]).filter(t=>t&&t.text&&!t.checked).map(t=>t.text);
-      cell.innerHTML=`<div class="num">${n}</div>${schedule?`<div class="event">${escapeHtml(schedule)}</div>`:''}${todoTexts.slice(0,2).map(t=>`<div class="todo">□ ${escapeHtml(t)}</div>`).join('')}`;
+      cell.innerHTML=`<div class="num">${n}</div>${events.map(e=>`<div class="event ${e.color}">${escapeHtml(e.text)}</div>`).join('')}${todoTexts.slice(0,2).map(t=>`<div class="todo">□ ${escapeHtml(t)}</div>`).join('')}`;
       cell.addEventListener('click',()=>openEdit(d));
       days.appendChild(cell);
     }
@@ -299,6 +323,79 @@ function normalizeDayTodos(dayData){
     if(t.todoId===undefined) t.todoId=null;
   });
 }
+
+
+function colorPickerHtml(color='blue'){
+  return `<div class="color-picker" data-color="${color}">
+    <button type="button" class="color-tile" data-color="${color}" aria-label="色を選択"></button>
+    <div class="color-palette">
+      ${['blue','red','green','pink'].map(c=>`<button type="button" class="color-choice ${c===color?'selected':''}" data-color="${c}" aria-label="${c}"></button>`).join('')}
+    </div>
+  </div>`;
+}
+function setupColorPicker(picker,onChange){
+  const tile=picker.querySelector('.color-tile');
+  const choices=[...picker.querySelectorAll('.color-choice')];
+  tile.addEventListener('click',e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.color-picker.open').forEach(p=>{if(p!==picker)p.classList.remove('open')});
+    picker.classList.toggle('open');
+  });
+  choices.forEach(btn=>btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const color=btn.dataset.color;
+    picker.dataset.color=color;
+    tile.dataset.color=color;
+    choices.forEach(x=>x.classList.toggle('selected',x===btn));
+    picker.classList.remove('open');
+    if(onChange) onChange(color);
+  }));
+}
+document.addEventListener('click',()=>document.querySelectorAll('.color-picker.open').forEach(p=>p.classList.remove('open')));
+
+const EVENT_COLORS={
+  blue:{label:'青',hex:'#2491d6'},
+  red:{label:'赤',hex:'#e0574a'},
+  green:{label:'緑',hex:'#1ac6b2'},
+  pink:{label:'ピンク',hex:'#e97fa8'}
+};
+function normalizeEvents(dayData){
+  if(!Array.isArray(dayData.events)){
+    const lines=String(dayData.schedule||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    dayData.events=lines.map(text=>({text,color:'blue'}));
+  }
+  dayData.events=dayData.events
+    .filter(e=>e&&typeof e.text==='string')
+    .map(e=>({text:e.text,color:EVENT_COLORS[e.color]?e.color:'blue'}));
+  while(dayData.events.length<4) dayData.events.push({text:'',color:'blue'});
+}
+function syncScheduleFromEvents(dayData){
+  normalizeEvents(dayData);
+  dayData.schedule=dayData.events.map(e=>e.text.trim()).filter(Boolean).join('\n');
+}
+function masterTodoOptions(selectedId=''){
+  let html='<option value="">TODOリストから選択</option>';
+  (todosDB.items||[]).filter(t=>!t.done).forEach(t=>{
+    html+=`<option value="${t.id}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.text||'(未入力)')}</option>`;
+  });
+  return html;
+}
+function linkOrCreateTodo(todo){
+  const text=String(todo.text||'').trim();
+  if(!text){todo.todoId=null;return}
+  if(todo.todoId){
+    const linked=todosDB.items.find(t=>t.id===todo.todoId);
+    if(linked){linked.text=text;linked.done=!!todo.checked;return}
+    todo.todoId=null;
+  }
+  let found=todosDB.items.find(t=>!t.done&&String(t.text||'').trim()===text);
+  if(!found){
+    found={id:newTodoId(),text,done:!!todo.checked};
+    todosDB.items.push(found);
+  }
+  todo.todoId=found.id;
+}
+
 function syncDayTodosToMaster(dayData, previousTodos){
   normalizeDayTodos(dayData);
   const prev=Array.isArray(previousTodos)?previousTodos:[];
@@ -341,16 +438,32 @@ function openEdit(d){
 
   document.getElementById('editTitle').textContent=
     `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）`;
-  document.getElementById('scheduleEdit').value=dayData.schedule||'';
+  normalizeEvents(dayData);
+  const eventList=document.getElementById('eventEditList');
+  eventList.innerHTML='';
+  dayData.events.forEach((event,i)=>{
+    const row=document.createElement('div');
+    row.className='event-edit-row';
+    row.dataset.color=event.color;
+    row.innerHTML=`${colorPickerHtml(event.color)}<input type="text" value="${escapeHtml(event.text||'')}" placeholder="予定 ${i+1}">`;
+    setupColorPicker(row.querySelector('.color-picker'),color=>row.dataset.color=color);
+    eventList.appendChild(row);
+  });
 
   const list=document.getElementById('todoEditList');
   list.innerHTML='';
   dayData.todos.forEach((t,i)=>{
     const row=document.createElement('div');
     row.className='todo-row';
-    row.innerHTML=
-      `<input type="checkbox" ${t.checked?'checked':''}>`+
-      `<input type="text" value="${escapeHtml(t.text||'')}" placeholder="TODO ${i+1}">`;
+    row.innerHTML=`<input type="checkbox" ${t.checked?'checked':''}>
+      <select>${masterTodoOptions(t.todoId)}</select>
+      <input type="text" value="${escapeHtml(t.text||'')}" placeholder="新しいTODO">`;
+    const select=row.querySelector('select');
+    const input=row.querySelector('input[type="text"]');
+    select.onchange=()=>{
+      const item=todosDB.items.find(x=>x.id===select.value);
+      if(item) input.value=item.text;
+    };
     list.appendChild(row);
   });
 
@@ -367,14 +480,20 @@ document.getElementById('saveBtn').onclick=async()=>{
   normalizeDayTodos(dayData);
   const previousTodos=dayData.todos.map(t=>({...t}));
 
-  dayData.schedule=document.getElementById('scheduleEdit').value;
+  const eventRows=[...document.querySelectorAll('#eventEditList .event-edit-row')];
+  dayData.events=eventRows.map(r=>({
+    color:r.querySelector('.color-picker').dataset.color,
+    text:r.querySelector('input[type="text"]').value
+  }));
+  syncScheduleFromEvents(dayData);
+
   const rows=[...document.querySelectorAll('#todoEditList .todo-row')];
   dayData.todos=rows.map((r,i)=>({
     checked:r.querySelector('input[type="checkbox"]').checked,
     text:r.querySelector('input[type="text"]').value,
-    todoId:previousTodos[i]?.todoId||null
+    todoId:r.querySelector('select').value||previousTodos[i]?.todoId||null
   }));
-
+  dayData.todos.forEach(linkOrCreateTodo);
   syncDayTodosToMaster(dayData,previousTodos);
   saveLocal();closeEdit();render();await push();
 };
@@ -428,7 +547,8 @@ function renderPrintCalendar(){
         const d=new Date(year,month,day);
         const {week,idx}=weekAndIndex(d);
         const dayData=week.days[idx]||{};
-        const schedule=(dayData.schedule||'').trim();
+        normalizeEvents(dayData);
+        const schedule=dayData.events.filter(e=>e.text.trim()).map(e=>e.text).join('／');
         const todos=(dayData.todos||[]).filter(t=>t&&t.text&&!t.checked).map(t=>t.text);
         const shown=schedule || todos.join('／');
         const dateClass=d.getDay()===0?'sun':d.getDay()===6?'sat':'';
