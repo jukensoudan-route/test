@@ -42,6 +42,10 @@ main{max-width:1500px;margin:auto;padding:14px}
 .dialog h2{font-size:17px;margin:0 0 10px;color:var(--navy)}
 .dialog label{display:block;font-size:11px;font-weight:700;color:var(--slate);margin-bottom:4px}
 .dialog textarea{width:100%;height:150px;border:1px solid #cfd9dd;border-radius:8px;padding:10px;font:13px inherit;resize:vertical}
+.todo-list{display:grid;gap:6px;margin-top:6px}
+.todo-row{display:flex;gap:6px;align-items:center}
+.todo-row input[type="checkbox"]{width:16px;height:16px}
+.todo-row input[type="text"]{flex:1;border:1px solid #cfd9dd;border-radius:6px;padding:7px;font:12px inherit}
 .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
 @media(max-width:1100px){.year-grid{grid-template-columns:repeat(3,minmax(250px,1fr))}}
 @media(max-width:800px){.year-grid{grid-template-columns:repeat(2,minmax(240px,1fr))}}
@@ -166,6 +170,8 @@ main{max-width:1500px;margin:auto;padding:14px}
     <h2 id="editTitle"></h2>
     <label for="scheduleEdit">予定</label>
     <textarea id="scheduleEdit" placeholder="予定を入力"></textarea>
+    <label>TODO</label>
+    <div id="todoEditList" class="todo-list"></div>
     <div class="dialog-actions">
       <button id="cancelBtn">キャンセル</button>
       <button class="primary" id="saveBtn">保存して同期</button>
@@ -263,6 +269,7 @@ function render(){
     for(let i=0;i<first.getDay();i++){const e=document.createElement('div');e.className='day empty';days.appendChild(e)}
     for(let n=1;n<=last.getDate();n++){
       const d=new Date(YEAR,month,n);const {week,idx}=weekAndIndex(d);const dayData=week.days[idx]||{};
+      normalizeDayTodos(dayData);
       const cell=document.createElement('div');
       const now=new Date();
       const today=(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate());
@@ -279,10 +286,74 @@ function render(){
   }
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function normalizeDayTodos(dayData){
+  if(!Array.isArray(dayData.todos)) dayData.todos=[];
+  while(dayData.todos.length<4){
+    dayData.todos.push({checked:false,text:'',todoId:null});
+  }
+  dayData.todos=dayData.todos.slice(0,4);
+  dayData.todos.forEach(t=>{
+    if(typeof t.checked!=='boolean') t.checked=false;
+    if(typeof t.text!=='string') t.text='';
+    if(t.todoId===undefined) t.todoId=null;
+  });
+}
+function syncDayTodosToMaster(dayData, previousTodos){
+  normalizeDayTodos(dayData);
+  const prev=Array.isArray(previousTodos)?previousTodos:[];
+  dayData.todos.forEach((todo,i)=>{
+    const old=prev[i]||{};
+    const oldId=old.todoId||null;
+
+    // Linked master TODO: checkbox and text changes are reflected everywhere.
+    if(oldId){
+      const master=todosDB.items.find(x=>x.id===oldId);
+      if(master){
+        if(todo.text.trim()){
+          master.text=todo.text;
+          master.done=todo.checked;
+          todo.todoId=master.id;
+        }else{
+          // Emptying a linked daily row only removes it from that day.
+          todo.todoId=null;
+        }
+      }
+    }
+
+    // If the row still carries a valid link, keep master completion synchronized.
+    if(todo.todoId){
+      const master=todosDB.items.find(x=>x.id===todo.todoId);
+      if(master){
+        master.text=todo.text;
+        master.done=todo.checked;
+      }else{
+        todo.todoId=null;
+      }
+    }
+  });
+}
 function openEdit(d){
-  selectedDate=d;const {week,idx}=weekAndIndex(d);
-  document.getElementById('editTitle').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）`;
-  document.getElementById('scheduleEdit').value=week.days[idx].schedule||'';
+  selectedDate=d;
+  const {week,idx}=weekAndIndex(d);
+  const dayData=week.days[idx];
+  normalizeDayTodos(dayData);
+
+  document.getElementById('editTitle').textContent=
+    `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）`;
+  document.getElementById('scheduleEdit').value=dayData.schedule||'';
+
+  const list=document.getElementById('todoEditList');
+  list.innerHTML='';
+  dayData.todos.forEach((t,i)=>{
+    const row=document.createElement('div');
+    row.className='todo-row';
+    row.innerHTML=
+      `<input type="checkbox" ${t.checked?'checked':''}>`+
+      `<input type="text" value="${escapeHtml(t.text||'')}" placeholder="TODO ${i+1}">`;
+    list.appendChild(row);
+  });
+
   document.getElementById('modal').classList.add('open');
   setTimeout(()=>document.getElementById('scheduleEdit').focus(),50);
 }
@@ -292,7 +363,19 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='
 document.getElementById('saveBtn').onclick=async()=>{
   if(!selectedDate)return;
   const {week,idx}=weekAndIndex(selectedDate);
-  week.days[idx].schedule=document.getElementById('scheduleEdit').value;
+  const dayData=week.days[idx];
+  normalizeDayTodos(dayData);
+  const previousTodos=dayData.todos.map(t=>({...t}));
+
+  dayData.schedule=document.getElementById('scheduleEdit').value;
+  const rows=[...document.querySelectorAll('#todoEditList .todo-row')];
+  dayData.todos=rows.map((r,i)=>({
+    checked:r.querySelector('input[type="checkbox"]').checked,
+    text:r.querySelector('input[type="text"]').value,
+    todoId:previousTodos[i]?.todoId||null
+  }));
+
+  syncDayTodosToMaster(dayData,previousTodos);
   saveLocal();closeEdit();render();await push();
 };
 document.getElementById('reloadBtn').onclick=pull;

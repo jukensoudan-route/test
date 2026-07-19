@@ -195,6 +195,53 @@ function headers(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
+function normalizeDayTodos(dayData){
+  if(!Array.isArray(dayData.todos)) dayData.todos=[];
+  while(dayData.todos.length<4){
+    dayData.todos.push({checked:false,text:'',todoId:null});
+  }
+  dayData.todos=dayData.todos.slice(0,4);
+  dayData.todos.forEach(t=>{
+    if(typeof t.checked!=='boolean') t.checked=false;
+    if(typeof t.text!=='string') t.text='';
+    if(t.todoId===undefined) t.todoId=null;
+  });
+}
+function syncDayTodosToMaster(dayData, previousTodos){
+  normalizeDayTodos(dayData);
+  const prev=Array.isArray(previousTodos)?previousTodos:[];
+  dayData.todos.forEach((todo,i)=>{
+    const old=prev[i]||{};
+    const oldId=old.todoId||null;
+
+    // Linked master TODO: checkbox and text changes are reflected everywhere.
+    if(oldId){
+      const master=todosDB.items.find(x=>x.id===oldId);
+      if(master){
+        if(todo.text.trim()){
+          master.text=todo.text;
+          master.done=todo.checked;
+          todo.todoId=master.id;
+        }else{
+          // Emptying a linked daily row only removes it from that day.
+          todo.todoId=null;
+        }
+      }
+    }
+
+    // If the row still carries a valid link, keep master completion synchronized.
+    if(todo.todoId){
+      const master=todosDB.items.find(x=>x.id===todo.todoId);
+      if(master){
+        master.text=todo.text;
+        master.done=todo.checked;
+      }else{
+        todo.todoId=null;
+      }
+    }
+  });
+}
+
 async function pull(){
   if(syncing)return;
   if(!ghCfg.token||!ghCfg.gistId){
@@ -241,6 +288,7 @@ function render(){
   for(let n=1;n<=last.getDate();n++){
     const d=new Date(shown.getFullYear(),shown.getMonth(),n);
     const {week,idx}=weekAndIndex(d),dayData=week.days[idx]||{};
+    normalizeDayTodos(dayData);
     const schedule=(dayData.schedule||'').trim();
     const todoTexts=(dayData.todos||[]).filter(t=>t&&t.text&&!t.checked).map(t=>t.text);
     const cell=document.createElement('div');
@@ -257,6 +305,7 @@ function render(){
 function openEdit(d){
   selectedDate=d;
   const {week,idx}=weekAndIndex(d),dayData=week.days[idx];
+  normalizeDayTodos(dayData);
   document.getElementById('editTitle').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）`;
   document.getElementById('scheduleEdit').value=dayData.schedule||'';
   const list=document.getElementById('todoEditList');list.innerHTML='';
@@ -273,13 +322,18 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='
 document.getElementById('saveBtn').onclick=async()=>{
   if(!selectedDate)return;
   const {week,idx}=weekAndIndex(selectedDate),dayData=week.days[idx];
+  normalizeDayTodos(dayData);
+  const previousTodos=dayData.todos.map(t=>({...t}));
+
   dayData.schedule=document.getElementById('scheduleEdit').value;
   const rows=[...document.querySelectorAll('#todoEditList .todo-row')];
   dayData.todos=rows.map((r,i)=>({
     checked:r.querySelector('input[type="checkbox"]').checked,
     text:r.querySelector('input[type="text"]').value,
-    todoId:dayData.todos[i]?.todoId||null
+    todoId:previousTodos[i]?.todoId||null
   }));
+
+  syncDayTodosToMaster(dayData,previousTodos);
   saveLocal();closeEdit();render();await push();
 };
 document.getElementById('prevBtn').onclick=()=>{shown.setMonth(shown.getMonth()-1);render()};
