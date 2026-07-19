@@ -198,10 +198,7 @@ main{max-width:1500px;margin:auto;padding:14px}
         <button id="nextYearBtn"></button>
       </div>
     </div>
-    <div class="actions">
-      <a class="btn" href="./?view=todo">TODOリスト</a>
-      <a class="btn" href="./?view=done">完了リスト</a>
-      <a class="btn" href="./">週間カレンダー</a>
+    <div class="actions"><a class="btn" href="./">週間カレンダー</a>
       <a class="btn" href="monthly_calendar.html">月間カレンダー</a>
       <button id="todayBtn">今日</button>
       <button id="reloadBtn">最新を読込</button>
@@ -212,16 +209,6 @@ main{max-width:1500px;margin:auto;padding:14px}
 </header>
 
 <main>
-<div class="todo-panels">
-  <section class="todo-panel">
-    <h3>TODOリスト</h3>
-    <div id="sharedTodoList" class="todo-panel-list"></div>
-  </section>
-  <section class="todo-panel">
-    <h3>完了リスト</h3>
-    <div id="sharedDoneList" class="todo-panel-list"></div>
-  </section>
-</div>
 <div id="calendar" class="year-grid"></div></main>
 <div id="printCalendar" class="print-calendar"></div>
 <div class="brand">進路相談室 ROUTE</div>
@@ -347,13 +334,13 @@ function renderSharedTodoPanels(){
   doneBox.innerHTML='';
 
   if(active.length===0){
-    todoBox.innerHTML='<div class="todo-panel-empty">未完了のTODOはありません</div>';
+    todoBox.innerHTML='<div class="todo-panel-empty"></div>';
   }else{
     active.forEach(item=>todoBox.appendChild(makeItem(item,false)));
   }
 
   if(done.length===0){
-    doneBox.innerHTML='<div class="todo-panel-empty">完了したTODOはありません</div>';
+    doneBox.innerHTML='<div class="todo-panel-empty"></div>';
   }else{
     done.forEach(item=>doneBox.appendChild(makeItem(item,true)));
   }
@@ -453,7 +440,7 @@ function syncScheduleFromEvents(dayData){
   dayData.schedule=dayData.events.map(e=>e.text.trim()).filter(Boolean).join('\n');
 }
 function masterTodoOptions(selectedId=''){
-  let html='<option value="">TODOリストから選択</option>';
+  let html='<option value="">から選択</option>';
   (todosDB.items||[]).filter(t=>!t.done).forEach(t=>{
     html+=`<option value="${t.id}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.text||'(未入力)')}</option>`;
   });
