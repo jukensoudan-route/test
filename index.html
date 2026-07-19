@@ -299,7 +299,8 @@
   .event-color{display:none}
   .color-picker{position:relative;flex:0 0 auto}
   .color-tile{width:26px;height:26px;border:1px solid rgba(0,0,0,.16);border-radius:6px;padding:0;cursor:pointer;display:block}
-  .color-tile[data-color="blue"],.color-choice[data-color="blue"]{background:#2491d6}
+  .color-tile[data-color="white"],.color-choice[data-color="white"]{background:#ffffff;border:1px solid #bfc7cf}
+.color-tile[data-color="blue"],.color-choice[data-color="blue"]{background:#2491d6}
   .color-tile[data-color="red"],.color-choice[data-color="red"]{background:#e0574a}
   .color-tile[data-color="green"],.color-choice[data-color="green"]{background:#1ac6b2}
   .color-tile[data-color="pink"],.color-choice[data-color="pink"]{background:#e97fa8}
@@ -974,11 +975,11 @@ if (!window.storage) {
     }
 
 
-function colorPickerHtml(color='blue'){
+function colorPickerHtml(color='white'){
   return `<div class="color-picker" data-color="${color}">
     <button type="button" class="color-tile" data-color="${color}" aria-label="色を選択"></button>
     <div class="color-palette">
-      ${['blue','red','green','pink'].map(c=>`<button type="button" class="color-choice ${c===color?'selected':''}" data-color="${c}" aria-label="${c}"></button>`).join('')}
+      ${['white','blue','red','green','pink'].map(c=>`<button type="button" class="color-choice ${c===color?'selected':''}" data-color="${c}" aria-label="${c}"></button>`).join('')}
     </div>
   </div>`;
 }
@@ -1003,6 +1004,7 @@ function setupColorPicker(picker,onChange){
 document.addEventListener('click',()=>document.querySelectorAll('.color-picker.open').forEach(p=>p.classList.remove('open')));
 
 const EVENT_COLORS={
+  white:{label:'',hex:'#ffffff'},
   blue:{label:'青',hex:'#2491d6'},
   red:{label:'赤',hex:'#e0574a'},
   green:{label:'緑',hex:'#1ac6b2'},
@@ -1011,12 +1013,12 @@ const EVENT_COLORS={
 function normalizeEvents(dayData){
   if(!Array.isArray(dayData.events)){
     const lines=String(dayData.schedule||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    dayData.events=lines.map(text=>({text,color:'blue'}));
+    dayData.events=lines.map(text=>({text,color:'white'}));
   }
   dayData.events=dayData.events
     .filter(e=>e&&typeof e.text==='string')
-    .map(e=>({text:e.text,color:EVENT_COLORS[e.color]?e.color:'blue'}));
-  while(dayData.events.length<4) dayData.events.push({text:'',color:'blue'});
+    .map(e=>({text:e.text,color:EVENT_COLORS[e.color]?e.color:'white'}));
+  while(dayData.events.length<4) dayData.events.push({text:'',color:'white'});
 }
 function syncScheduleFromEvents(dayData){
   normalizeEvents(dayData);
