@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家族カレンダー</title>
+<style>
+  :root {
+    --blue: #2491d6;
+    --blue-light: #2ea0e8;
+    --teal: #1ac6b2;
+    --teal-light: #26d4bd;
+    --navy: #16323e;
+    --slate: #5a7480;
+    --line: #dde5e8;
+    --line-soft: #c7d3d8;
+    --border: #cfd9dd;
+    --bg: #f4f6f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", "Yu Gothic", sans-serif;
+    color: #1e2b33;
+    padding: 24px 12px 60px;
+    display: flex;
+    justify-content: center;
+  }
+  .sheet {
+    width: 100%;
+    max-width: 620px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(22,50,62,0.10);
+    padding: 22px 22px 20px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .title .sub {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--slate);
+    letter-spacing: 1px;
+    margin-top: 3px;
+  }
+  .datebox {
+    display: flex;
+    gap: 8px;
+  }
+  .datebox .field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f4fbfd;
+    border: 1px solid #d7e6ea;
+    border-radius: 6px;
+    padding: 5px 12px;
+  }
+  .datebox .field span.label {
+    font-size: 9px;
+    color: #8a9ba3;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+  .datebox input {
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: center;
+    font-family: inherit;
+  }
+  .datebox input:focus { outline: none; }
+  .datebox .range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .datebox .range-inputs input[type="date"] {
+    width: 108px;
+  }
+  .datebox .range-sep {
+    color: var(--slate);
+    font-weight: 700;
+  }
+  .datebox .start-date {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    min-width: 96px;
+    text-align: center;
+  }
+
+  .accent-bar {
+    height: 5px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--blue) 0%, var(--teal) 100%);
+    margin-bottom: 14px;
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tab-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 8px 0;
+    border: 1px solid var(--border);
+    background: #f4f6f7;
+    color: var(--slate);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    color: #fff;
+    border: none;
+  }
+  .calendar-link {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 8px 4px;
+    border: 1px solid var(--border);
+    background: #fff8dd;
+    color: #7a651a;
+    border-radius: 6px;
+    text-decoration: none;
+  }
+  .calendar-link:hover { background: #fff1b8; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Content row */
+  .content-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    margin-bottom: 14px;
+  }
+  .planner-table {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(22,50,62,0.06);
+  }
+  .table-header { display: flex; border-bottom: 1px solid var(--border); }
+  .col-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    padding: 8px 0;
+  }
+  .col-header.date { width: 52px; flex-shrink: 0; background: linear-gradient(160deg, var(--blue-light), var(--blue)); }
+  .col-header.schedule { flex: 1; background: linear-gradient(160deg, var(--blue-light), var(--blue)); border-left: 1px solid rgba(255,255,255,0.35); }
+  .col-header.todo { width: 128px; flex-shrink: 0; background: linear-gradient(160deg, var(--teal-light), var(--teal)); font-size: 10px; border-left: 1px solid #fff; }
+
+  .table-body { display: flex; flex: 1; }
+  .day-column { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); min-width: 0; }
+  .day-todo-column { width: 128px; flex-shrink: 0; display: flex; flex-direction: column; }
+
+  .day-row { display: flex; border-bottom: 1px solid var(--line); }
+  .day-row:last-child { border-bottom: none; }
+  .day-row:nth-child(odd) { background: #f7fbfd; }
+  .day-label {
+    width: 52px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--line);
+    padding: 6px 2px;
+  }
+  .day-label .date-num { font-size: 15px; font-weight: 700; color: #1e2b33; line-height: 1; }
+  .day-label.sat .date-num { color: var(--blue); }
+  .day-label.sun .date-num { color: #e0574a; }
+  .day-label .dow-jp { font-size: 10px; color: var(--slate); font-weight: 700; margin-top: 3px; }
+
+  .day-content {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .day-content textarea {
+    border: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 12px;
+    color: #1e2b33;
+    padding: 5px 8px 0;
+    background: repeating-linear-gradient(to bottom, transparent, transparent 23px, var(--line-soft) 23px, calc(23px + 1px));
+    line-height: 24px;
+    min-height: 101px;
+    height: 101px;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .day-content textarea:focus { outline: none; background-color: #fbfeff; }
+
+  .day-todo-cell {
+    display: flex;
+    flex-direction: column;
+    padding: 5px 6px 0;
+    border-bottom: 1px solid var(--line);
+    min-height: 101px;
+    box-sizing: border-box;
+  }
+  .day-todo-cell:last-child { border-bottom: none; }
+  .day-row:nth-child(odd) .day-todo-cell { background: #f7fbfd; }
+  .mini-check {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    line-height: 24px;
+  }
+  .mini-check input[type="checkbox"] {
+    width: 13px; height: 13px; accent-color: var(--teal); flex-shrink: 0; margin: 0; cursor: pointer;
+  }
+  .mini-check .mini-text {
+    flex: 1; min-width: 0; border: none; border-bottom: 1px dotted var(--line-soft);
+    font-family: inherit; font-size: 10px; color: #1e2b33; background: transparent; padding: 0 2px;
+  }
+  .mini-check .mini-text:focus { outline: none; background: #fbfeff; }
+  .mini-check .mini-pick {
+    width: 20px;
+    height: 18px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #f4fbfd;
+    color: transparent;
+    text-shadow: none;
+    text-indent: -9999px;
+    font-family: inherit;
+    font-size: 0;
+    cursor: pointer;
+    padding: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--slate) 50%),
+                      linear-gradient(135deg, var(--slate) 50%, transparent 50%);
+    background-position: calc(50% - 2px) 8px, calc(50% + 2px) 8px;
+    background-size: 4px 4px, 4px 4px;
+    background-repeat: no-repeat;
+  }
+  .mini-check .mini-pick option {
+    color: #1e2b33;
+    font-size: 12px;
+    text-indent: 0;
+  }
+  .mini-check .mini-pick:focus { outline: none; border-color: var(--teal); }
+  .mini-check .mini-pick:hover { background-color: #e8f7fb; }
+  .mini-check input[type="checkbox"]:checked ~ .mini-text { color: #9db2ba; text-decoration: line-through; }
+
+  /* Master TODO box (dedicated page) */
+  .master-todo {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(22,50,62,0.06);
+  }
+  .master-todo-header {
+    background: linear-gradient(160deg, var(--teal-light), var(--teal));
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-align: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .master-todo-header.done {
+    background: linear-gradient(160deg, #8fa6b1, #5a7480);
+    font-size: 10px;
+  }
+  .done-empty {
+    padding: 24px 12px;
+    text-align: center;
+    font-size: 12px;
+    color: #a9b7bd;
+  }
+  .master-todo-body { flex: 1; display: flex; flex-direction: column; }
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 6px;
+    border-bottom: 1px dotted var(--line);
+    min-height: 22px;
+  }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-item:first-child { border-top: 1px solid var(--border); }
+  .todo-item:nth-child(odd) { background: #f4fdfb; }
+  .todo-item .num { font-size: 9px; color: #9db2ba; width: 14px; flex-shrink: 0; }
+  .todo-item input[type="checkbox"] {
+    width: 13px; height: 13px; accent-color: var(--teal); flex-shrink: 0; margin: 0; cursor: pointer;
+  }
+  .todo-item input[type="text"] {
+    flex: 1; min-width: 0; border: none; font-family: inherit; font-size: 11px; color: #1e2b33; background: transparent; padding: 3px 0;
+  }
+  .todo-item input[type="text"]:focus { outline: none; }
+  .todo-item input[type="checkbox"]:checked ~ input[type="text"] { color: #9db2ba; text-decoration: line-through; }
+
+  /* Memo */
+  .memo { display: flex; flex-direction: column; }
+  .memo-header {
+    background: linear-gradient(160deg, #6b8592, var(--slate));
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 8px 12px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .memo-header::before {
+    content: "";
+    display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #fff; opacity: 0.85;
+  }
+  .memo-body-wrap {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 8px rgba(22,50,62,0.06);
+    overflow: hidden;
+  }
+  .memo textarea {
+    width: 100%;
+    height: 130px;
+    border: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 13px;
+    color: #1e2b33;
+    padding: 8px 12px;
+    background: repeating-linear-gradient(to bottom, transparent, transparent 25px, var(--line) 25px, calc(25px + 1px));
+    line-height: 26px;
+  }
+  .memo textarea:focus { outline: none; }
+
+  .footer { margin-top: 16px; text-align: center; }
+  .footer .brand { font-size: 10px; font-weight: 700; color: var(--slate); letter-spacing: 1.5px; }
+  .footer .tagline { font-size: 9px; color: #a9b7bd; letter-spacing: 0.5px; margin-top: 3px; }
+  .page-brand { display: none; }
+
+  .toolbar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .toolbar button {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--slate);
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .toolbar button:hover { background: #f4f6f7; }
+  .toolbar button.primary {
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    color: #fff;
+    border: none;
+  }
+  .save-indicator {
+    text-align: center;
+    font-size: 10px;
+    color: #a9b7bd;
+    margin-top: 6px;
+    height: 14px;
+  }
+
+  /* Print-only rendered pages */
+  #printArea { display: none; }
+
+  .print-options {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px;
+    background: #f4fbfd;
+    border: 1px solid #d7e6ea;
+    border-radius: 8px;
+  }
+  .print-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate);
+    cursor: pointer;
+    padding: 4px 8px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .print-opt input[type="checkbox"] {
+    width: 14px; height: 14px; accent-color: var(--teal); margin: 0; cursor: pointer;
+  }
+  .print-opt input[type="number"] {
+    width: 44px; padding: 3px 4px; text-align: center; margin-left: 2px;
+    border: 1px solid var(--border); border-radius: 4px;
+    font-family: inherit; font-size: 11px; font-weight: 700; color: var(--navy);
+  }
+  .print-unit { font-size: 11px; color: var(--slate); font-weight: 700; }
+
+
+  .google-sync-panel{margin-top:10px;border:1px solid var(--border);border-radius:8px;background:#fff;overflow:hidden}
+  .google-sync-toggle{width:100%;padding:10px 12px;border:0;background:#fff;font:700 11px inherit;color:var(--slate);cursor:pointer;text-align:left}
+  .google-sync-body{display:none;padding:0 12px 12px}
+  .google-sync-panel.open .google-sync-body{display:block}
+  .google-sync-field{display:block;margin:8px 0}
+  .google-sync-field span{display:block;font-size:10px;font-weight:700;color:var(--slate);margin-bottom:3px}
+  .google-sync-field input,.google-sync-field select{width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:6px;font:12px inherit}
+  .google-sync-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .google-sync-actions button{flex:1;min-width:130px;padding:8px;border:1px solid var(--border);border-radius:6px;background:#f4fbfd;font:700 11px inherit;cursor:pointer}
+  .google-sync-actions .primary{border:0;color:#fff;background:linear-gradient(135deg,#4285f4,#34a853)}
+  .google-sync-msg{min-height:14px;margin-top:8px;text-align:center;font-size:10px;color:var(--slate)}
+  .google-sync-msg.ok{color:#1a9e8f}.google-sync-msg.err{color:#c0524a}
+
+  /* GitHub sync panel */
+  .sync-panel {
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .sync-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #fff;
+    border: none;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate);
+    cursor: pointer;
+  }
+  .sync-toggle:hover { background: #f7fbfd; }
+  .sync-toggle .chev { margin-left: auto; color: #b9c6cc; }
+  .sync-panel.open .sync-toggle .chev { transform: rotate(180deg); }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .dot.off { background: #cfd9dd; }
+  .dot.on  { background: var(--teal); box-shadow: 0 0 0 3px rgba(26,198,178,0.18); }
+
+  .sync-body { display: none; padding: 0 12px 12px; }
+  .sync-panel.open .sync-body { display: block; }
+
+  .sync-help {
+    font-size: 10px;
+    line-height: 1.6;
+    color: #8a9ba3;
+    margin: 0 0 10px;
+  }
+  .sync-field {
+    display: block;
+    margin-bottom: 8px;
+  }
+  .sync-field span {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--slate);
+    margin-bottom: 3px;
+  }
+  .sync-field input {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--navy);
+    box-sizing: border-box;
+  }
+  .sync-field input:focus { outline: none; border-color: var(--teal); }
+
+  .sync-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .sync-actions button {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: #f4fbfd;
+    color: var(--slate);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .sync-actions button:hover { background: #e8f7fb; }
+  .sync-actions button.danger { background: #fff; color: #c0736c; border-color: #eddad8; }
+  .sync-msg {
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--slate);
+    min-height: 14px;
+    text-align: center;
+  }
+  .sync-msg.err { color: #c0524a; }
+  .sync-msg.ok  { color: #1a9e8f; }
+
+
+  /* 今日の行を画面上だけ強調表示 */
+  .day-row.today {
+    background: #fff7cc !important;
+    box-shadow: inset 4px 0 0 #f2b705;
+  }
+  .day-row.today .day-label {
+    background: #fff1a8;
+  }
+
+  @media print {
+    .day-row.today,
+    .day-row.today .day-label {
+      background: inherit !important;
+      box-shadow: none !important;
+    }
+    body { background: #fff !important; padding: 0 !important; margin: 0 !important; font-size: 10pt !important; }
+
+    /* Hide the live app; show only the generated print pages */
+    .sheet { display: none !important; }
+    .toolbar, .save-indicator, .tabs, .footer, .print-options, .sync-panel { display: none !important; }
+    .page-brand { display: none !important; }
+    #printArea { display: block !important; }
+
+    .print-sheet {
+      box-shadow: none !important;
+      max-width: none !important;
+      width: 148mm !important;
+      height: 210mm !important;
+      overflow: hidden !important;
+      border-radius: 0 !important;
+      padding: 4mm 7mm 6mm 7mm !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", "Yu Gothic", sans-serif !important;
+      color: #1e2b33 !important;
+    }
+    .print-sheet:last-child { page-break-after: avoid !important; break-after: avoid !important; }
+
+    .planner-table, .master-todo, .memo-body-wrap { box-shadow: none !important; }
+    textarea, select { color: #1e2b33 !important; }
+
+    /* Header compact for print */
+    .header { margin-bottom: 2mm !important; }
+    .title { font-size: 14pt !important; }
+    .title .sub { font-size: 8pt !important; margin-top: 1mm !important; }
+    .datebox .field { padding: 1mm 3mm !important; }
+    .datebox .field span.label { font-size: 7pt !important; }
+    .datebox input { font-size: 9pt !important; }
+    .datebox .range-inputs input[type="date"] { width: 26mm !important; }
+    .datebox .start-date { font-size: 9pt !important; min-width: 24mm !important; }
+    .accent-bar { margin-bottom: 0 !important; height: 2mm !important; border-radius: 0 !important; }
+
+    /* Page 1: schedule + memo fills the A5 sheet */
+    #pageSchedule, .page-schedule {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: hidden !important;
+    }
+    /* TODO list page */
+    #pageTodo, .page-todo {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: hidden !important;
+    }
+
+    .content-row { flex: none !important; margin-top: 0 !important; margin-bottom: 3mm !important; }
+    .planner-table { flex: none !important; display: flex !important; flex-direction: column !important; }
+    .table-header { flex: none !important; }
+    .col-header { padding: 1.5mm 0 !important; font-size: 9pt !important; }
+    .col-header.date { width: 15mm !important; }
+    .col-header.todo { width: 58mm !important; font-size: 8pt !important; }
+    .table-body { flex: none !important; }
+    .day-column { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; }
+    .day-todo-column { width: 58mm !important; }
+
+    /* Each day: exactly 4 lines of 5mm = 20mm row */
+    .day-row { flex: none !important; height: 20mm !important; min-height: 20mm !important; overflow: hidden !important; }
+    .day-label { width: 15mm !important; padding: 1mm 1mm !important; }
+    .day-label .date-num { font-size: 11pt !important; }
+    .day-label .dow-jp { font-size: 7pt !important; margin-top: 1mm !important; }
+
+    .day-content { flex: 1 1 auto !important; height: 20mm !important; overflow: hidden !important; }
+    .day-content textarea {
+      flex: none !important;
+      height: 20mm !important;
+      min-height: 20mm !important;
+      max-height: 20mm !important;
+      line-height: 5mm !important;
+      padding: 0 2mm !important;
+      background: repeating-linear-gradient(to bottom, transparent, transparent calc(5mm - 0.15mm), var(--line-soft) calc(5mm - 0.15mm), 5mm) !important;
+      background-size: 100% 20mm !important;
+      background-position: 0 0 !important;
+      font-size: 9pt !important;
+      box-sizing: border-box !important;
+    }
+    .day-todo-cell {
+      flex: none !important;
+      height: 20mm !important;
+      min-height: 20mm !important;
+      max-height: 20mm !important;
+      padding: 0 2mm !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-start !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+    }
+    .mini-check { height: 5mm !important; line-height: 5mm !important; gap: 2mm !important; }
+    .mini-check input[type="checkbox"] { width: 3mm !important; height: 3mm !important; }
+    .mini-check .mini-text { font-size: 8pt !important; border-bottom: none !important; }
+    .mini-check .mini-pick { display: none !important; }
+
+    /* MEMO absorbs the rest of the sheet */
+    .memo {
+      flex: 1 1 auto !important;
+      height: auto !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 4px !important;
+      overflow: hidden !important;
+      margin-bottom: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .memo-header { display: none !important; }
+    .memo-body-wrap { flex: 1 1 auto !important; display: flex !important; height: auto !important; border: none !important; border-radius: 0 !important; }
+    .memo textarea {
+      flex: 1 1 auto !important;
+      height: auto !important;
+      line-height: 6mm !important;
+      padding: 1mm 3mm !important;
+      font-size: 10pt !important;
+      background: repeating-linear-gradient(to bottom, transparent, transparent calc(6mm - 0.15mm), var(--line) calc(6mm - 0.15mm), 6mm) !important;
+    }
+
+    /* Page 2: TODO list fills page */
+    .master-todo { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; margin-top: 10mm !important; }
+    .master-todo-header { padding: 2mm 0 !important; font-size: 10pt !important; }
+    .master-todo-body { flex: 1 1 auto !important; }
+    .todo-item { flex: 1 1 auto !important; min-height: 5mm !important; padding: 0 3mm !important; }
+    .todo-item .num { font-size: 8pt !important; }
+    .todo-item input[type="checkbox"] { width: 3.5mm !important; height: 3.5mm !important; }
+    .todo-item input[type="text"] { font-size: 10pt !important; }
+
+    .page-brand {
+      display: block !important;
+      text-align: center !important;
+      font-size: 8pt !important;
+      font-weight: 700 !important;
+      color: var(--slate) !important;
+      letter-spacing: 1.5px !important;
+      margin-top: 3mm !important;
+    }
+
+    @page { size: A5; margin: 0; }
+  }
+
+  @media (max-width: 480px) {
+    .content-row { flex-direction: column; }
+    .planner-table, .master-todo { width: 100%; }
+    .day-content textarea { font-size: 11px; }
+  }
+</style>
+
+<script>
+if (!window.storage) {
+  window.storage = {
+    async get(key) {
+      const value = localStorage.getItem(key);
+      if (value === null) throw new Error('not found');
+      return { value };
+    },
+    async set(key, value) {
+      localStorage.setItem(key, value);
+      return { value };
+    }
+  };
+}
+</script>
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#1ac6b2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="家族カレンダー">
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div class="title">
+        <span>
+          WEEKLY PLANNER
+          <span class="sub">週間スケジュール ・ TODO ・ メモ</span>
+        </span>
+      </div>
+      <div class="datebox">
+        <div class="field range">
+          <span class="label">週</span>
+          <div class="range-inputs">
+            <span class="start-date" id="startDateLabel"></span>
+            <span class="range-sep">〜</span>
+            <input type="date" id="endDateInput">
+            <button id="todayBtn" type="button" style="margin-left:6px;padding:4px 10px;border:1px solid #cfd9dd;border-radius:6px;background:#f4fbfd;font-weight:700;cursor:pointer;">今日</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="accent-bar"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabSchedule">週間表</button>
+      <button class="tab-btn" id="tabTodo">TODOリスト</button>
+      <button class="tab-btn" id="tabDone">完了リスト</button>
+      <a class="calendar-link" href="monthly_calendar.html">月間カレンダー</a>
+      <a class="calendar-link" href="annual_calendar.html">年間カレンダー</a>
+    </div>
+
+    <div class="page active" id="pageSchedule">
+      <div class="content-row">
+        <div class="planner-table">
+          <div class="table-header">
+            <div class="col-header date">日</div>
+            <div class="col-header schedule">予定</div>
+            <div class="col-header todo">TODO</div>
+          </div>
+          <div class="table-body">
+            <div class="day-column" id="dayColumn"></div>
+            <div class="day-todo-column" id="dayTodoColumn"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="memo">
+        <div class="memo-header">MEMO</div>
+        <div class="memo-body-wrap">
+          <textarea id="memoText" placeholder=""></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="page-brand" id="brandPage1">進路相談室 ROUTE</div>
+
+    <div class="page" id="pageTodo">
+      <div class="master-todo">
+        <div class="master-todo-header">TODOリスト（20項目）</div>
+        <div class="master-todo-body" id="masterTodoBody"></div>
+      </div>
+    </div>
+    <div class="page-brand" id="brandPage2">進路相談室 ROUTE</div>
+
+    <div class="page" id="pageDone">
+      <div class="master-todo">
+        <div class="master-todo-header done">完了したTODO（チェックを外すと戻ります）</div>
+        <div class="master-todo-body" id="doneTodoBody"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="brand">進路相談室 ROUTE</div>
+      <div class="tagline">すべての家庭に、進路の地図を。</div>
+    </div>
+
+    <div class="print-options">
+      <label class="print-opt">
+        <input type="checkbox" id="optWeek" checked>
+        <span>週間表</span>
+        <input type="number" id="printWeeksInput" min="1" max="12" value="1">
+        <span class="print-unit">週分</span>
+      </label>
+      <label class="print-opt">
+        <input type="checkbox" id="optTodo" checked>
+        <span>TODOリスト</span>
+      </label>
+      <label class="print-opt">
+        <input type="checkbox" id="optDone">
+        <span>完了リスト</span>
+      </label>
+    </div>
+
+    <div class="sync-panel">
+      <button class="sync-toggle" id="syncToggle">
+        <span id="syncStatusDot" class="dot off"></span>
+        クラウド同期（GitHub）
+        <span class="chev">▾</span>
+      </button>
+
+      <div class="sync-body" id="syncBody">
+        <p class="sync-help">
+          スマホとPCで同じデータを使うための設定です。<br>
+          トークンはこの端末内にのみ保存され、外部には送信されません（GitHub以外には通信しません）。
+        </p>
+
+        <label class="sync-field">
+          <span>GitHubトークン</span>
+          <input type="password" id="ghToken" placeholder="ghp_ ... （gist権限のみ）" autocomplete="off">
+        </label>
+
+        <label class="sync-field">
+          <span>Gist ID（空欄なら新規作成）</span>
+          <input type="text" id="ghGist" placeholder="例: 3f8a1c... " autocomplete="off">
+        </label>
+
+        <div class="sync-actions">
+          <button id="btnPush">この端末 → クラウドへ保存</button>
+          <button id="btnPull">クラウド → この端末へ読込</button>
+          <button id="btnForget" class="danger">接続を解除</button>
+        </div>
+        <div class="sync-msg" id="syncMsg"></div>
+      </div>
+    </div>
+
+
+    <div class="google-sync-panel">
+      <button class="google-sync-toggle" id="googleSyncToggle">Googleカレンダー連携 ▾</button>
+      <div class="google-sync-body">
+        <p style="font-size:10px;line-height:1.6;color:#8a9ba3;margin:0 0 8px">
+          週間プランナーの予定をGoogleカレンダーへ追加・更新します。
+        </p>
+        <label class="google-sync-field">
+          <span>Google OAuth クライアントID</span>
+          <input id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com">
+        </label>
+        <label class="google-sync-field">
+          <span>同期期間</span>
+          <select id="googleSyncRange">
+            <option value="week">表示中の1週間</option>
+            <option value="year">表示中の週から1年間</option>
+          </select>
+        </label>
+        <div class="google-sync-actions">
+          <button id="googleConnectBtn">Googleに接続</button>
+          <button id="googleSyncBtn" class="primary">Googleカレンダーへ同期</button>
+        </div>
+        <div id="googleSyncMsg" class="google-sync-msg"></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="primary" id="saveBtn">保存する</button>
+      <button id="printBtn">印刷する</button>
+      <button id="resetBtn">クリア</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
+
+  <div id="printArea"></div>
+
+  <script>
+    const DOW_JP = ['日','月','火','水','木','金','土'];
+    const WEEKS_KEY = 'planner2-weeks-db-v1';   // { "2026-07-13": { days:[...], memo:"" }, ... }
+    const TODOS_KEY = 'planner2-todos-db-v1';   // { items: [ {id, text, done} ] }
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function autoResizeTextarea(el) {
+      el.style.height = 'auto';
+      const min = 101;
+      const line = 24;
+      const needed = Math.max(min, el.scrollHeight);
+      const snapped = Math.ceil((needed - 5) / line) * line + 5;
+      el.style.height = snapped + 'px';
+    }
+
+    function getMondayOf(dateStr) {
+      const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1 - day);
+      d.setDate(d.getDate() + diff);
+      return d;
+    }
+
+    function fmtDateInput(d) {
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+
+    function emptyWeek() {
+      return {
+        days: Array.from({length: 7}, () => ({
+          schedule: '',
+          todos: Array.from({length: 4}, () => ({ checked: false, text: '', todoId: null }))
+        })),
+        memo: ''
+      };
+    }
+
+    function newTodoId() {
+      return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    // ---- Databases (in-memory mirrors of storage) ----
+    let weeksDB = {};              // keyed by week start date (YYYY-MM-DD)
+    let todosDB = { items: [] };   // master TODO database (grows; never auto-trimmed)
+    let currentWeekStart = fmtDateInput(getMondayOf(null));
+    let printWeeks = 1;            // how many weeks to print
+    let saveTimer = null;
+    let lastUserEditAt = 0;
+    let isPulling = false;
+
+    function currentWeek() {
+      if (!weeksDB[currentWeekStart]) weeksDB[currentWeekStart] = emptyWeek();
+      const w = weeksDB[currentWeekStart];
+      // normalize
+      if (!Array.isArray(w.days) || w.days.length !== 7) w.days = emptyWeek().days;
+      w.days.forEach(d => {
+        if (!Array.isArray(d.todos)) d.todos = [];
+        while (d.todos.length < 4) d.todos.push({ checked: false, text: '', todoId: null });
+        d.todos.forEach(t => {
+          if (typeof t.text !== 'string') t.text = '';
+          if (t.todoId === undefined) t.todoId = null;
+          if (typeof t.checked !== 'boolean') t.checked = false;
+        });
+      });
+      if (typeof w.memo !== 'string') w.memo = '';
+      return w;
+    }
+
+    // Always show exactly 20 rows in the TODO list: unchecked items first (kept in DB),
+    // padded with blanks. Checked items stay in the DB but disappear from the visible list.
+    function visibleTodos() {
+      const active = todosDB.items.filter(t => !t.done);
+      const rows = active.slice(0, 20);
+      while (rows.length < 20) rows.push(null);
+      return rows;
+    }
+
+    async function loadDB() {
+      try {
+        if (window.storage && typeof window.storage.get === 'function') {
+          try {
+            const w = await window.storage.get(WEEKS_KEY, false);
+            if (w && w.value) weeksDB = JSON.parse(w.value) || {};
+          } catch (e) { /* no weeks yet */ }
+          try {
+            const t = await window.storage.get(TODOS_KEY, false);
+            if (t && t.value) todosDB = JSON.parse(t.value) || { items: [] };
+          } catch (e) { /* no todos yet */ }
+        }
+      } catch (e) { /* storage unavailable */ }
+      if (!todosDB || !Array.isArray(todosDB.items)) todosDB = { items: [] };
+      if (!weeksDB || typeof weeksDB !== 'object') weeksDB = {};
+      render();
+    }
+
+    function scheduleSave() {
+      lastUserEditAt = Date.now();
+      const indicator = document.getElementById('saveIndicator');
+      indicator.textContent = '編集中...';
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveDB, 600);
+    }
+
+    async function saveDB() {
+      const indicator = document.getElementById('saveIndicator');
+      if (!window.storage || typeof window.storage.set !== 'function') {
+        indicator.textContent = 'この画面内でのみ保持されます（自動保存は利用できません）';
+        return;
+      }
+      try {
+        await window.storage.set(WEEKS_KEY, JSON.stringify(weeksDB), false);
+        await window.storage.set(TODOS_KEY, JSON.stringify(todosDB), false);
+        indicator.textContent = 'データベースに保存しました';
+        setTimeout(() => {
+          if (indicator.textContent === 'データベースに保存しました') indicator.textContent = '';
+        }, 1800);
+        scheduleCloudPush();
+      } catch (e) {
+        console.error('storage save error:', e);
+        indicator.textContent = '保存に失敗しました（もう一度お試しください）';
+      }
+    }
+
+    function computeDayMeta(weekStart) {
+      const monday = new Date(weekStart + 'T00:00:00');
+      const metas = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        metas.push({
+          label: `${d.getMonth()+1}/${d.getDate()}`,
+          dow: DOW_JP[d.getDay()],
+          isSat: d.getDay() === 6,
+          isSun: d.getDay() === 0
+        });
+      }
+      return metas;
+    }
+
+    function todoOptionsHtml(selectedId) {
+      let html = '<option value="">（直接入力／未選択）</option>';
+      todosDB.items.filter(t => !t.done).forEach(t => {
+        const sel = t.id === selectedId ? ' selected' : '';
+        html += `<option value="${t.id}"${sel}>${escapeHtml(t.text) || '(未入力)'}</option>`;
+      });
+      return html;
+    }
+
+    function render() {
+      const week = currentWeek();
+      const startD = new Date(currentWeekStart + 'T00:00:00');
+      const endD = new Date(startD);
+      endD.setDate(startD.getDate() + 6);
+      document.getElementById('startDateLabel').textContent =
+        `${startD.getFullYear()}/${pad(startD.getMonth()+1)}/${pad(startD.getDate())}`;
+      document.getElementById('endDateInput').value = fmtDateInput(endD);
+      document.getElementById('memoText').value = week.memo;
+
+      const metas = computeDayMeta(currentWeekStart);
+
+      // Schedule column
+      const dayColumn = document.getElementById('dayColumn');
+      dayColumn.innerHTML = '';
+      metas.forEach((meta, i) => {
+        const row = document.createElement('div');
+        const rowDate = new Date(startD);
+        rowDate.setDate(startD.getDate() + i);
+        const today = new Date();
+        const isToday =
+          rowDate.getFullYear() === today.getFullYear() &&
+          rowDate.getMonth() === today.getMonth() &&
+          rowDate.getDate() === today.getDate();
+        row.className = 'day-row' + (isToday ? ' today' : '');
+        const labelClass = meta.isSat ? 'day-label sat' : (meta.isSun ? 'day-label sun' : 'day-label');
+        row.innerHTML = `
+          <div class="${labelClass}">
+            <span class="date-num">${meta.label}</span>
+            <span class="dow-jp">(${meta.dow})</span>
+          </div>
+          <div class="day-content">
+            <textarea data-day="${i}" placeholder=""></textarea>
+          </div>
+        `;
+        dayColumn.appendChild(row);
+        const ta = row.querySelector('textarea');
+        ta.value = week.days[i].schedule;
+        autoResizeTextarea(ta);
+        ta.addEventListener('input', (e) => {
+          week.days[i].schedule = e.target.value;
+          autoResizeTextarea(ta);
+          scheduleSave();
+        });
+      });
+
+      // In-table TODO column: text input + dropdown from TODO DB
+      const dayTodoColumn = document.getElementById('dayTodoColumn');
+      dayTodoColumn.innerHTML = '';
+      metas.forEach((meta, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'day-todo-cell';
+        week.days[i].todos.forEach((todo, j) => {
+          const row = document.createElement('div');
+          row.className = 'mini-check';
+          row.innerHTML = `
+            <input type="checkbox" ${todo.checked ? 'checked' : ''}>
+            <input type="text" class="mini-text" placeholder="TODO">
+            <select class="mini-pick">${todoOptionsHtml(todo.todoId)}</select>
+          `;
+          const checkbox = row.querySelector('input[type="checkbox"]');
+          const textInput = row.querySelector('.mini-text');
+          const select = row.querySelector('.mini-pick');
+          textInput.value = todo.text || '';
+
+          checkbox.addEventListener('change', (e) => {
+            todo.checked = e.target.checked;
+            // Reflect completion back into the TODO DB if it came from there
+            if (todo.todoId) {
+              const dbItem = todosDB.items.find(t => t.id === todo.todoId);
+              if (dbItem) dbItem.done = e.target.checked;
+            }
+            scheduleSave();
+            render();
+          });
+
+          textInput.addEventListener('input', (e) => {
+            todo.text = e.target.value;
+            todo.todoId = null; // typed freely, no longer linked to a DB item
+            select.value = '';
+            scheduleSave();
+          });
+
+          select.addEventListener('change', (e) => {
+            const id = e.target.value;
+            if (!id) {
+              todo.todoId = null;
+            } else {
+              const dbItem = todosDB.items.find(t => t.id === id);
+              if (dbItem) {
+                todo.todoId = dbItem.id;
+                todo.text = dbItem.text;
+                textInput.value = dbItem.text;
+              }
+            }
+            scheduleSave();
+          });
+
+          cell.appendChild(row);
+        });
+        dayTodoColumn.appendChild(cell);
+      });
+
+      // Master TODO list: always 20 visible rows; checked items vanish from view but stay in DB
+      const masterBody = document.getElementById('masterTodoBody');
+      masterBody.innerHTML = '';
+      visibleTodos().forEach((item, i) => {
+        const row = document.createElement('div');
+        row.className = 'todo-item';
+        row.innerHTML = `<span class="num">${i+1}</span><input type="checkbox"><input type="text" value="">`;
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        const text = row.querySelector('input[type="text"]');
+        text.value = item ? item.text : '';
+
+        checkbox.addEventListener('change', () => {
+          if (item) {
+            item.done = true;    // stays in DB, disappears from the visible list
+            scheduleSave();
+            render();
+          } else {
+            checkbox.checked = false;
+          }
+        });
+
+        text.addEventListener('input', (e) => {
+          const val = e.target.value;
+          if (item) {
+            item.text = val;
+          } else if (val.trim()) {
+            const created = { id: newTodoId(), text: val, done: false };
+            todosDB.items.push(created);
+            scheduleSave();
+            render();
+            // keep focus on the newly created row
+            const inputs = masterBody.querySelectorAll('input[type="text"]');
+            if (inputs[i]) { inputs[i].focus(); inputs[i].setSelectionRange(val.length, val.length); }
+            return;
+          }
+          scheduleSave();
+        });
+
+        masterBody.appendChild(row);
+      });
+
+      // Completed TODO list: unchecking sends the item back to the active list
+      const doneBody = document.getElementById('doneTodoBody');
+      doneBody.innerHTML = '';
+      const doneItems = todosDB.items.filter(t => t.done);
+      if (doneItems.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'done-empty';
+        empty.textContent = '完了したTODOはまだありません';
+        doneBody.appendChild(empty);
+      } else {
+        doneItems.forEach((item, i) => {
+          const row = document.createElement('div');
+          row.className = 'todo-item';
+          row.innerHTML = `<span class="num">${i+1}</span><input type="checkbox" checked><input type="text" value="">`;
+          const checkbox = row.querySelector('input[type="checkbox"]');
+          const text = row.querySelector('input[type="text"]');
+          text.value = item.text;
+
+          checkbox.addEventListener('change', () => {
+            item.done = false;   // restore to the active TODO list
+            scheduleSave();
+            render();
+          });
+          text.addEventListener('input', (e) => {
+            item.text = e.target.value;
+            scheduleSave();
+          });
+
+          doneBody.appendChild(row);
+        });
+      }
+    }
+
+    document.getElementById('endDateInput').addEventListener('change', (e) => {
+      const endD = new Date(e.target.value + 'T00:00:00');
+      const startD = new Date(endD);
+      startD.setDate(endD.getDate() - 6);
+      currentWeekStart = fmtDateInput(startD);
+      render();
+      scheduleSave();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click',()=>{
+      currentWeekStart=fmtDateInput(getMondayOf(null));
+      render();
+      scheduleSave();
+    });
+
+    document.getElementById('memoText').addEventListener('input', (e) => {
+      currentWeek().memo = e.target.value;
+      scheduleSave();
+    });
+    document.getElementById('printBtn').addEventListener('click', doPrint);
+    document.getElementById('optWeek').addEventListener('change', (e) => {
+      document.getElementById('printWeeksInput').disabled = !e.target.checked;
+    });
+    document.getElementById('tabSchedule').addEventListener('click', () => switchTab('schedule'));
+    document.getElementById('tabTodo').addEventListener('click', () => switchTab('todo'));
+    document.getElementById('tabDone').addEventListener('click', () => switchTab('done'));
+
+    function switchTab(name) {
+      const pages = { schedule: 'pageSchedule', todo: 'pageTodo', done: 'pageDone' };
+      const tabs  = { schedule: 'tabSchedule',  todo: 'tabTodo',  done: 'tabDone'  };
+      Object.keys(pages).forEach(k => {
+        document.getElementById(pages[k]).classList.toggle('active', k === name);
+        document.getElementById(tabs[k]).classList.toggle('active', k === name);
+      });
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (confirm('この週の入力内容をクリアしますか？（TODOデータベースは残ります）')) {
+        weeksDB[currentWeekStart] = emptyWeek();
+        render();
+        saveDB();
+      }
+    });
+
+    // ---- Printing: clone the live DOM for each week so the print output is
+    //      pixel-identical to the on-screen layout (same markup, same classes). ----
+    function makePrintSheet(innerNodes) {
+      const sheet = document.createElement('div');
+      sheet.className = 'print-sheet';
+      innerNodes.forEach(n => sheet.appendChild(n));
+      return sheet;
+    }
+
+    function cloneHeaderFor(weekStart) {
+      const header = document.querySelector('.header').cloneNode(true);
+      const bar = document.querySelector('.accent-bar').cloneNode(true);
+
+      const startD = new Date(weekStart + 'T00:00:00');
+      const endD = new Date(startD);
+      endD.setDate(startD.getDate() + 6);
+
+      const startLabel = header.querySelector('#startDateLabel, .start-date');
+      if (startLabel) {
+        startLabel.removeAttribute('id');
+        startLabel.textContent =
+          `${startD.getFullYear()}/${pad(startD.getMonth()+1)}/${pad(startD.getDate())}`;
+      }
+      const endInput = header.querySelector('#endDateInput, input[type="date"]');
+      if (endInput) {
+        // Replace the date picker with plain text so print shows no widget chrome
+        const span = document.createElement('span');
+        span.className = 'start-date';
+        span.textContent =
+          `${endD.getFullYear()}/${pad(endD.getMonth()+1)}/${pad(endD.getDate())}`;
+        endInput.parentNode.replaceChild(span, endInput);
+      }
+      return [header, bar];
+    }
+
+    function stripForPrint(root) {
+      // Placeholders must not appear on paper
+      root.querySelectorAll('[placeholder]').forEach(el => el.removeAttribute('placeholder'));
+      // Dropdown pickers are an on-screen affordance only
+      root.querySelectorAll('.mini-pick').forEach(el => el.remove());
+      return root;
+    }
+
+    function buildWeekPage(weekStart) {
+      // Temporarily point the live app at this week, render, then clone the result.
+      const saved = currentWeekStart;
+      currentWeekStart = weekStart;
+      render();
+
+      const nodes = cloneHeaderFor(weekStart);
+      const pageClone = document.getElementById('pageSchedule').cloneNode(true);
+      pageClone.removeAttribute('id');
+      pageClone.className = 'page-schedule';
+      stripForPrint(pageClone);
+
+      currentWeekStart = saved;
+      return makePrintSheet([...nodes, pageClone]);
+    }
+
+    function buildTodoPage() {
+      render();
+      const pageClone = document.getElementById('pageTodo').cloneNode(true);
+      pageClone.removeAttribute('id');
+      pageClone.className = 'page-todo';
+      stripForPrint(pageClone);
+      return makePrintSheet([pageClone]);
+    }
+
+    function buildDonePage() {
+      render();
+      const pageClone = document.getElementById('pageDone').cloneNode(true);
+      pageClone.removeAttribute('id');
+      pageClone.className = 'page-todo';
+      stripForPrint(pageClone);
+      return makePrintSheet([pageClone]);
+    }
+
+    function doPrint() {
+      const wantWeek = document.getElementById('optWeek').checked;
+      const wantTodo = document.getElementById('optTodo').checked;
+      const wantDone = document.getElementById('optDone').checked;
+
+      if (!wantWeek && !wantTodo && !wantDone) {
+        alert('印刷する項目を1つ以上選んでください。');
+        return;
+      }
+
+      const n = Math.max(1, Math.min(12, parseInt(document.getElementById('printWeeksInput').value, 10) || 1));
+      const container = document.getElementById('printArea');
+      container.innerHTML = '';
+
+      if (wantWeek) {
+        let ws = new Date(currentWeekStart + 'T00:00:00');
+        for (let k = 0; k < n; k++) {
+          container.appendChild(buildWeekPage(fmtDateInput(ws)));
+          ws.setDate(ws.getDate() + 7);
+        }
+      }
+      if (wantTodo) container.appendChild(buildTodoPage());
+      if (wantDone) container.appendChild(buildDonePage());
+
+      render(); // restore the live view to the selected week
+      window.print();
+    }
+
+    // ================= GitHub Gist sync =================
+    const GH_KEY = 'planner2-github-cfg-v1';   // { token, gistId }
+    const GIST_FILE = 'route-planner2-data.json';
+    let ghCfg = { token: '', gistId: '' };
+    let pushTimer = null;
+
+    function syncMsg(text, kind) {
+      const el = document.getElementById('syncMsg');
+      el.textContent = text;
+      el.className = 'sync-msg' + (kind ? ' ' + kind : '');
+    }
+
+    function setSyncDot(on) {
+      const dot = document.getElementById('syncStatusDot');
+      dot.className = 'dot ' + (on ? 'on' : 'off');
+    }
+
+    async function loadGhCfg() {
+      try {
+        if (window.storage && typeof window.storage.get === 'function') {
+          const r = await window.storage.get(GH_KEY, false);
+          if (r && r.value) ghCfg = Object.assign(ghCfg, JSON.parse(r.value));
+        }
+      } catch (e) { /* not configured yet */ }
+      document.getElementById('ghToken').value = ghCfg.token || '';
+      document.getElementById('ghGist').value  = ghCfg.gistId || '';
+      setSyncDot(!!ghCfg.token);
+    }
+
+    async function saveGhCfg() {
+      try {
+        if (window.storage && typeof window.storage.set === 'function') {
+          await window.storage.set(GH_KEY, JSON.stringify(ghCfg), false);
+        }
+      } catch (e) { /* ignore */ }
+      setSyncDot(!!ghCfg.token);
+    }
+
+    function readGhInputs() {
+      ghCfg.token  = document.getElementById('ghToken').value.trim();
+      ghCfg.gistId = document.getElementById('ghGist').value.trim();
+    }
+
+    function ghHeaders() {
+      return {
+        'Authorization': 'Bearer ' + ghCfg.token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      };
+    }
+
+    function snapshot() {
+      return JSON.stringify({
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        weeks: weeksDB,
+        todos: todosDB
+      }, null, 2);
+    }
+
+    async function pushToGist(silent) {
+      readGhInputs();
+      if (!ghCfg.token) { if (!silent) syncMsg('GitHubトークンを入力してください', 'err'); return; }
+
+      if (!silent) syncMsg('クラウドに保存中...');
+      const body = {
+        description: '進路相談室 ROUTE - 別ユーザー用週間プランナー2 データ',
+        public: false,
+        files: { [GIST_FILE]: { content: snapshot() } }
+      };
+
+      try {
+        let res;
+        if (ghCfg.gistId) {
+          res = await fetch('https://api.github.com/gists/' + ghCfg.gistId, {
+            method: 'PATCH', headers: ghHeaders(), body: JSON.stringify(body)
+          });
+        } else {
+          res = await fetch('https://api.github.com/gists', {
+            method: 'POST', headers: ghHeaders(), body: JSON.stringify(body)
+          });
+        }
+
+        if (!res.ok) {
+          const t = await res.text();
+          syncMsg(`保存に失敗しました (${res.status})。トークンの権限（gist）をご確認ください。`, 'err');
+          console.error('gist push failed:', res.status, t);
+          return;
+        }
+
+        const data = await res.json();
+        if (!ghCfg.gistId) {
+          ghCfg.gistId = data.id;
+          document.getElementById('ghGist').value = data.id;
+        }
+        await saveGhCfg();
+        syncMsg('クラウドに保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）', 'ok');
+      } catch (e) {
+        console.error(e);
+        syncMsg('通信に失敗しました。ネット接続をご確認ください。', 'err');
+      }
+    }
+
+    async function pullFromGist() {
+      readGhInputs();
+      if (!ghCfg.token)  { syncMsg('GitHubトークンを入力してください', 'err'); return; }
+      if (!ghCfg.gistId) { syncMsg('Gist IDを入力してください（初回はまず「クラウドへ保存」）', 'err'); return; }
+
+      syncMsg('クラウドから読込中...');
+      isPulling = true;
+      try {
+        const res = await fetch('https://api.github.com/gists/' + ghCfg.gistId, { headers: ghHeaders() });
+        if (!res.ok) {
+          syncMsg(`読込に失敗しました (${res.status})。トークンとGist IDをご確認ください。`, 'err');
+          return;
+        }
+        const data = await res.json();
+        const file = data.files && data.files[GIST_FILE];
+        if (!file) { syncMsg('データファイルが見つかりません', 'err'); return; }
+
+        let content = file.content;
+        if (file.truncated && file.raw_url) {
+          content = await (await fetch(file.raw_url)).text();
+        }
+
+        const parsed = JSON.parse(content);
+        if (parsed.weeks) weeksDB = parsed.weeks;
+        if (parsed.todos && Array.isArray(parsed.todos.items)) todosDB = parsed.todos;
+
+        await saveGhCfg();
+        await saveDB();       // mirror into this device's local storage
+        render();
+        const when = parsed.updatedAt ? new Date(parsed.updatedAt).toLocaleString('ja-JP') : '';
+        syncMsg('クラウドから読み込みました' + (when ? '（保存日時: ' + when + '）' : ''), 'ok');
+      } catch (e) {
+        console.error(e);
+        syncMsg('通信に失敗しました。ネット接続をご確認ください。', 'err');
+      } finally {
+        isPulling = false;
+      }
+    }
+
+    function scheduleCloudPush() {
+      if (isPulling) return;
+      if (!ghCfg.token || !ghCfg.gistId) return;   // only auto-sync once connected
+      if (pushTimer) clearTimeout(pushTimer);
+      pushTimer = setTimeout(() => pushToGist(true), 4000);
+    }
+
+    document.getElementById('syncToggle').addEventListener('click', () => {
+      document.querySelector('.sync-panel').classList.toggle('open');
+    });
+
+    // 入力したトークンとGist IDを、その場で端末に保存する
+    document.getElementById('ghToken').addEventListener('input', async () => {
+      readGhInputs();
+      await saveGhCfg();
+      syncMsg('接続情報をこの端末に保存しました', 'ok');
+    });
+    document.getElementById('ghGist').addEventListener('input', async () => {
+      readGhInputs();
+      await saveGhCfg();
+      syncMsg('接続情報をこの端末に保存しました', 'ok');
+    });
+    document.getElementById('btnPush').addEventListener('click', () => pushToGist(false));
+    document.getElementById('btnPull').addEventListener('click', pullFromGist);
+    document.getElementById('btnForget').addEventListener('click', async () => {
+      if (!confirm('この端末からGitHubの接続情報を削除しますか？（クラウド上のデータは残ります）')) return;
+      ghCfg = { token: '', gistId: '' };
+      document.getElementById('ghToken').value = '';
+      document.getElementById('ghGist').value = '';
+      await saveGhCfg();
+      syncMsg('接続を解除しました');
+    });
+
+    async function autoPullIfReady() {
+      readGhInputs();
+      if (!ghCfg.token || !ghCfg.gistId || !navigator.onLine || isPulling) return;
+      if (Date.now() - lastUserEditAt < 10000) return;
+      await pullFromGist();
+    }
+
+    async function initializePlanner() {
+      await loadGhCfg();
+      await loadDB();
+      await autoPullIfReady();
+      setInterval(autoPullIfReady, 30000);
+    }
+
+    window.addEventListener('online', autoPullIfReady);
+    window.addEventListener('focus', autoPullIfReady);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') autoPullIfReady();
+    });
+
+
+    // ===== Google Calendar one-way sync + 30-second auto sync =====
+    const GOOGLE_CFG_KEY='planner-google-calendar-cfg-v1';
+    const GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar.events';
+    const GOOGLE_AUTO_SYNC_MS=30000;
+    const GOOGLE_LOGIN_HINT='yuko.iphone@gmail.com';
+
+    let googleTokenClient=null;
+    let googleAccessToken='';
+    let googleTokenExpiresAt=0;
+    let googleSyncInProgress=false;
+    let googleAutoSyncTimer=null;
+    let googleReconnectNoticeShown=false;
+
+    function gmsg(t,k=''){
+      const e=document.getElementById('googleSyncMsg');
+      e.textContent=t;
+      e.className='google-sync-msg'+(k?' '+k:'');
+    }
+
+    function saveGoogleClientId(){
+      localStorage.setItem(
+        GOOGLE_CFG_KEY,
+        document.getElementById('googleClientId').value.trim()
+      );
+    }
+
+    function loadGoogleClientId(){
+      document.getElementById('googleClientId').value=
+        localStorage.getItem(GOOGLE_CFG_KEY)||'';
+    }
+
+    function hasValidGoogleToken(){
+      return !!googleAccessToken && Date.now() < googleTokenExpiresAt;
+    }
+
+    function clearGoogleToken(){
+      googleAccessToken='';
+      googleTokenExpiresAt=0;
+    }
+
+    function initGoogle(){
+      saveGoogleClientId();
+      const clientId=document.getElementById('googleClientId').value.trim();
+
+      if(!clientId){
+        gmsg('OAuthクライアントIDを入力してください','err');
+        return false;
+      }
+
+      if(!window.google||!google.accounts||!google.accounts.oauth2){
+        gmsg('Google認証を読み込めません。通信状態を確認してください','err');
+        return false;
+      }
+
+      googleTokenClient=google.accounts.oauth2.initTokenClient({
+        client_id:clientId,
+        scope:GOOGLE_SCOPE,
+        login_hint:GOOGLE_LOGIN_HINT,
+        callback:()=>{}
+      });
+      return true;
+    }
+
+    function authGoogle(){
+      return new Promise((resolve,reject)=>{
+        if(!initGoogle()){
+          reject(new Error('Google認証の初期化に失敗しました'));
+          return;
+        }
+
+        googleTokenClient.callback=r=>{
+          if(r.error){
+            clearGoogleToken();
+            reject(new Error(r.error));
+            return;
+          }
+
+          googleAccessToken=r.access_token;
+          const expiresIn=Math.max(60,Number(r.expires_in)||3600);
+          googleTokenExpiresAt=Date.now()+(expiresIn*1000)-60000;
+          googleReconnectNoticeShown=false;
+          resolve(r.access_token);
+        };
+
+        // Googleの仕様上、初回接続や期限切れ後の再接続には
+        // ユーザー操作が必要です。
+        // 以前に許可済みなら同意画面を強制せず、妻のアカウントを優先します。
+        // Googleの仕様上、期限切れ後はボタン操作が必要な場合があります。
+        googleTokenClient.requestAccessToken({prompt:''});
+      });
+    }
+
+    function addDays2(d,n){
+      const x=new Date(d);
+      x.setDate(x.getDate()+n);
+      return x;
+    }
+
+    function dkey(d){
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+
+    function collectGoogleEvents(){
+      const start=new Date(currentWeekStart+'T00:00:00');
+      const days=document.getElementById('googleSyncRange').value==='year'?365:7;
+      const end=addDays2(start,days);
+      const out=[];
+
+      for(let d=new Date(start);d<end;d=addDays2(d,1)){
+        const monday=getMondayOf(dkey(d));
+        const weekKey=fmtDateInput(monday);
+        const idx=(d.getDay()+6)%7;
+        const w=weeksDB[weekKey];
+
+        if(!w||!w.days||!w.days[idx]) continue;
+
+        const schedule=String(w.days[idx].schedule||'').trim();
+        if(!schedule) continue;
+
+        const summary=schedule.split(/\r?\n/).find(Boolean)||'予定';
+        out.push({
+          date:dkey(d),
+          summary:summary.slice(0,120),
+          description:schedule,
+          key:'route-'+dkey(d)
+        });
+      }
+      return out;
+    }
+
+    async function gapi(url,opt={}){
+      const r=await fetch(url,{
+        ...opt,
+        headers:{
+          Authorization:'Bearer '+googleAccessToken,
+          'Content-Type':'application/json',
+          ...(opt.headers||{})
+        }
+      });
+
+      if(!r.ok){
+        const err=new Error('Google Calendar API エラー '+r.status);
+        err.status=r.status;
+        throw err;
+      }
+
+      return r.status===204?null:r.json();
+    }
+
+    async function existingManaged(start,end){
+      const q=new URLSearchParams({
+        timeMin:start.toISOString(),
+        timeMax:end.toISOString(),
+        singleEvents:'true',
+        privateExtendedProperty:'routePlannerManaged=true',
+        maxResults:'2500'
+      });
+
+      const data=await gapi(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events?'+q
+      );
+      return data.items||[];
+    }
+
+    async function syncGoogle(options={}){
+      const {auto=false}=options;
+
+      if(googleSyncInProgress) return false;
+      if(!navigator.onLine){
+        if(!auto) gmsg('オフラインのため同期できません','err');
+        return false;
+      }
+
+      if(!hasValidGoogleToken()){
+        if(auto){
+          if(!googleReconnectNoticeShown){
+            gmsg('Google自動同期待機中：Googleに再接続してください','err');
+            googleReconnectNoticeShown=true;
+          }
+          return false;
+        }
+        await authGoogle();
+      }
+
+      googleSyncInProgress=true;
+
+      try{
+        if(!auto) gmsg('同期準備中…');
+
+        const items=collectGoogleEvents();
+        const checkedAt=new Date().toLocaleTimeString('ja-JP');
+
+        const syncStart=new Date(currentWeekStart+'T00:00:00');
+        const syncDays=document.getElementById('googleSyncRange').value==='year'?365:7;
+        const start=syncStart;
+        const end=addDays2(syncStart,syncDays+1);
+
+        const existing=await existingManaged(start,end);
+        const map=new Map();
+
+        existing.forEach(e=>{
+          const k=e.extendedProperties
+            &&e.extendedProperties.private
+            &&e.extendedProperties.private.routePlannerKey;
+          if(k) map.set(k,e);
+        });
+
+        let add=0;
+        let upd=0;
+        let del=0;
+
+        const desiredKeys=new Set(items.map(item=>item.key));
+
+        for(const item of items){
+          const body={
+            summary:item.summary,
+            description:item.description+'\n\n週間プランナーから同期',
+            start:{date:item.date},
+            end:{date:dkey(addDays2(new Date(item.date+'T00:00:00'),1))},
+            extendedProperties:{
+              private:{
+                routePlannerManaged:'true',
+                routePlannerKey:item.key
+              }
+            }
+          };
+
+          const old=map.get(item.key);
+
+          if(old){
+            await gapi(
+              'https://www.googleapis.com/calendar/v3/calendars/primary/events/'
+              +encodeURIComponent(old.id),
+              {method:'PATCH',body:JSON.stringify(body)}
+            );
+            upd++;
+          }else{
+            await gapi(
+              'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+              {method:'POST',body:JSON.stringify(body)}
+            );
+            add++;
+          }
+        }
+
+        // 週間プランナーから消えた予定は、Google側でも削除する。
+        // 対象は routePlannerManaged=true の予定だけなので、
+        // Googleカレンダーへ直接入力した家族の予定は削除しない。
+        for(const managedEvent of existing){
+          const key=managedEvent.extendedProperties
+            &&managedEvent.extendedProperties.private
+            &&managedEvent.extendedProperties.private.routePlannerKey;
+
+          if(key && !desiredKeys.has(key)){
+            await gapi(
+              'https://www.googleapis.com/calendar/v3/calendars/primary/events/'
+              +encodeURIComponent(managedEvent.id),
+              {method:'DELETE'}
+            );
+            del++;
+          }
+        }
+
+        const mode=auto?'自動同期':'同期';
+        gmsg(
+          `${mode}完了：新規${add}件、更新${upd}件、削除${del}件（${checkedAt}）`,
+          'ok'
+        );
+        return true;
+
+      }catch(e){
+        console.error(e);
+
+        if(e.status===401||e.status===403){
+          clearGoogleToken();
+          googleReconnectNoticeShown=true;
+          gmsg('Googleの接続期限が切れました。「Googleに接続」を押してください','err');
+        }else{
+          gmsg(e.message||'同期に失敗しました','err');
+        }
+        return false;
+
+      }finally{
+        googleSyncInProgress=false;
+      }
+    }
+
+    async function autoSyncGoogleIfReady(){
+      if(document.visibilityState==='hidden') return;
+      if(!navigator.onLine||googleSyncInProgress) return;
+
+      const clientId=document.getElementById('googleClientId').value.trim();
+      if(!clientId) return;
+
+      await syncGoogle({auto:true});
+    }
+
+    function startGoogleAutoSync(){
+      if(googleAutoSyncTimer) clearInterval(googleAutoSyncTimer);
+      googleAutoSyncTimer=setInterval(
+        autoSyncGoogleIfReady,
+        GOOGLE_AUTO_SYNC_MS
+      );
+
+      // ページ表示後、Google接続済みならすぐ同期
+      setTimeout(autoSyncGoogleIfReady,1500);
+    }
+
+    document.getElementById('googleSyncToggle').onclick=()=>{
+      document.querySelector('.google-sync-panel').classList.toggle('open');
+    };
+
+    document.getElementById('googleClientId').addEventListener('input',()=>{
+      saveGoogleClientId();
+      clearGoogleToken();
+      googleReconnectNoticeShown=false;
+      gmsg('クライアントIDを保存しました。Googleに接続してください');
+    });
+
+    document.getElementById('googleConnectBtn').onclick=async()=>{
+      try{
+        gmsg('接続中…');
+        await authGoogle();
+        gmsg('Googleに接続しました。自動同期を開始します','ok');
+        await syncGoogle({auto:true});
+      }catch(e){
+        gmsg(e.message||'接続に失敗しました','err');
+      }
+    };
+
+    document.getElementById('googleSyncBtn').onclick=()=>{
+      syncGoogle({auto:false});
+    };
+
+
+    async function saveAndSyncAll(){
+      const saveBtn=document.getElementById('saveBtn');
+      const indicator=document.getElementById('saveIndicator');
+      const originalText=saveBtn.textContent;
+
+      if(saveBtn.disabled) return;
+
+      saveBtn.disabled=true;
+      saveBtn.textContent='保存中…';
+      indicator.textContent='端末・クラウド・Googleカレンダーへ保存しています…';
+
+      try{
+        // 1. 端末内へ保存
+        await saveDB();
+
+        // 2. GitHub Gistへ即時保存（接続済みの場合）
+        readGhInputs();
+        if(ghCfg.token&&ghCfg.gistId&&navigator.onLine){
+          if(pushTimer){
+            clearTimeout(pushTimer);
+            pushTimer=null;
+          }
+          await pushToGist(true);
+        }
+
+        // 3. Googleカレンダーへ同期
+        const clientId=document.getElementById('googleClientId').value.trim();
+        if(clientId&&navigator.onLine){
+          const googleOk=await syncGoogle({auto:false});
+          if(!googleOk){
+            indicator.textContent='端末とGitHubには保存しました。Googleは再接続が必要です';
+            return;
+          }
+        }
+
+        indicator.textContent='すべて保存・同期しました';
+        setTimeout(()=>{
+          if(indicator.textContent==='すべて保存・同期しました'){
+            indicator.textContent='';
+          }
+        },2500);
+
+      }catch(e){
+        console.error(e);
+        indicator.textContent='保存または同期に失敗しました。接続状態を確認してください';
+      }finally{
+        saveBtn.disabled=false;
+        saveBtn.textContent=originalText;
+      }
+    }
+
+    document.getElementById('saveBtn').addEventListener('click',saveAndSyncAll);
+
+    window.addEventListener('online',autoSyncGoogleIfReady);
+    window.addEventListener('focus',autoSyncGoogleIfReady);
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible'){
+        autoSyncGoogleIfReady();
+      }
+    });
+
+    loadGoogleClientId();
+    startGoogleAutoSync();
+
+    initializePlanner();
+  </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>月間カレンダー｜進路相談室 ROUTE</title>
+<style>
+:root{
+  --blue:#2491d6;--teal:#1ac6b2;--navy:#16323e;--slate:#5a7480;
+  --line:#dbe5e9;--bg:#f4f6f7;--sun:#e0574a;--sat:#2491d6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#1e2b33}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.97);border-bottom:1px solid var(--line);box-shadow:0 2px 10px rgba(22,50,62,.08);padding:10px 14px}
+.header-row{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{font-size:20px;margin:0;color:var(--navy)}
+.sub{font-size:11px;color:var(--slate);margin-top:3px}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+button,a.btn{font:700 12px inherit;border:1px solid #cfd9dd;background:#fff;color:var(--slate);border-radius:7px;padding:8px 11px;text-decoration:none;cursor:pointer}
+button.primary{border:none;color:#fff;background:linear-gradient(135deg,var(--blue),var(--teal))}
+.status{max-width:1200px;margin:7px auto 0;font-size:11px;color:var(--slate)}
+.status.ok{color:#168f81}.status.err{color:#bf5249}.status.syncing{color:var(--blue)}
+main{max-width:1200px;margin:auto;padding:14px}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px}
+.month-label{font-size:22px;font-weight:800;color:var(--navy);min-width:190px;text-align:center}
+.calendar{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 3px 14px rgba(22,50,62,.08)}
+.week-head,.days{display:grid;grid-template-columns:repeat(7,1fr)}
+.week-head div{padding:9px 4px;text-align:center;font-size:12px;font-weight:800;color:#fff;background:#6b8592;border-right:1px solid rgba(255,255,255,.35)}
+.week-head div:last-child{border-right:none}
+.week-head .sun{background:#e38a80}.week-head .sat{background:#5aa8d8}
+.day{min-height:135px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;background:#fff;cursor:pointer;overflow:hidden}
+.day:nth-child(7n){border-right:none}
+.day.empty{background:#f7f9fa;cursor:default}
+.day:hover:not(.empty){background:#f4fbfd}
+.num{font-size:13px;font-weight:800;margin-bottom:4px}
+.day.sun .num{color:var(--sun)}.day.sat .num{color:var(--sat)}
+.event{font-size:10px;line-height:1.45;background:#edf8fb;border-left:3px solid var(--teal);border-radius:3px;padding:3px 4px;margin:3px 0;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
+.todo{font-size:9px;color:#667f89;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.brand{text-align:center;padding:14px;font-size:10px;color:#78909a;letter-spacing:1px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.36);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}
+.modal.open{display:flex}
+.dialog{width:min(540px,100%);background:#fff;border-radius:12px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.22)}
+.dialog h2{font-size:17px;margin:0 0 10px;color:var(--navy)}
+.dialog label{display:block;font-size:11px;font-weight:700;color:var(--slate);margin:10px 0 4px}
+.dialog textarea{width:100%;height:150px;border:1px solid #cfd9dd;border-radius:8px;padding:10px;font:13px inherit;resize:vertical}
+.todo-list{display:grid;gap:6px}
+.todo-row{display:flex;gap:6px;align-items:center}
+.todo-row input[type="checkbox"]{width:16px;height:16px}
+.todo-row input[type="text"]{flex:1;border:1px solid #cfd9dd;border-radius:6px;padding:7px;font:12px inherit}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.print-calendar{display:none}
+
+@media(max-width:700px){
+  .header-row{align-items:flex-start;flex-direction:column}
+  .actions{width:100%}.actions>*{flex:1;text-align:center}
+  main{padding:7px}.month-label{font-size:18px;min-width:150px}
+  .day{min-height:105px;padding:4px}.event{font-size:9px}
+}
+@media(max-width:480px){
+  .day{min-height:88px}.week-head div{font-size:10px;padding:7px 2px}
+  .event{-webkit-line-clamp:3}
+}
+.day.today{background:#fff7cc!important;box-shadow:inset 0 0 0 2px #f2b705}
+.day.today .num{background:#ffe78a;border-radius:50%;display:inline-block;padding:2px 6px}
+@media print{
+.day.today,.day.today .num{background:inherit!important;box-shadow:none!important}
+
+  header,main,.brand,.modal{display:none!important}
+  body{background:#fff!important;margin:0!important}
+  .print-calendar{
+    display:block!important;
+    width:100%;
+    padding:5mm 7mm;
+    box-sizing:border-box;
+    font-family:"Yu Gothic","Meiryo",sans-serif;
+    color:#1e2b33
+  }
+  .excel-title{
+    background:linear-gradient(90deg,#2491d6,#1ac6b2);
+    color:#fff;border:0.35mm solid #78909a;text-align:center;
+    font-size:20pt;font-weight:700;padding:5mm 0;margin:0
+  }
+  .excel-week-head,.excel-days{display:grid;grid-template-columns:repeat(7,1fr)}
+  .excel-week-head div{
+    border-right:0.35mm solid #78909a;border-bottom:0.35mm solid #78909a;
+    padding:2.5mm 1mm;text-align:center;font-size:10pt;font-weight:700;background:linear-gradient(160deg,#6b8592,#5a7480);color:#fff
+  }
+  .excel-week-head div:first-child{border-left:0.35mm solid #78909a}
+  .excel-week-head .sun{background:#e38a80;color:#fff}
+  .excel-week-head .sat{background:#5aa8d8;color:#fff}
+  .excel-day{
+    height:31mm;border-right:0.35mm solid #78909a;border-bottom:0.35mm solid #78909a;
+    padding:2mm;overflow:hidden;background:#fff
+  }
+  .excel-day:nth-child(7n+1){border-left:0.35mm solid #78909a}
+  .excel-day.empty{background:#f2f2f2}
+  .excel-num{font-size:10pt;font-weight:700;margin-bottom:1mm}
+  .excel-day.sun .excel-num{color:#c00000}
+  .excel-day.sat .excel-num{color:#0070c0}
+  .excel-event{
+    font-size:8pt;line-height:1.25;white-space:pre-wrap;
+    background:#edf8fb;border-left:1mm solid #1ac6b2;padding:1mm;margin-top:1mm;max-height:18mm;overflow:hidden
+  }
+  .excel-todo{font-size:7pt;line-height:1.2;margin-top:1mm;color:#444}
+  @page{size:A4 landscape;margin:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <div>
+      <h1>月間カレンダー</h1>
+      <div class="sub">週間カレンダーと同じGitHub Gistで自動同期</div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="./">週間カレンダー</a>
+      <a class="btn" href="annual_calendar.html">年間カレンダー</a>
+      <button id="reloadBtn">最新を読込</button>
+      <button id="printBtn">印刷</button>
+    </div>
+  </div>
+  <div id="status" class="status">同期情報を確認しています…</div>
+</header>
+
+<main>
+  <div class="month-nav">
+    <button id="prevBtn">← 前月</button>
+    <div id="monthLabel" class="month-label"></div>
+    <button id="nextBtn">翌月 →</button>
+    <button id="todayBtn">今日</button>
+  </div>
+  <div class="calendar">
+    <div class="week-head">
+      <div class="sun">日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="sat">土</div>
+    </div>
+    <div id="days" class="days"></div>
+  </div>
+</main>
+<div id="printCalendar" class="print-calendar"></div>
+<div class="brand">進路相談室 ROUTE</div>
+
+<div id="modal" class="modal">
+  <div class="dialog">
+    <h2 id="editTitle"></h2>
+    <label for="scheduleEdit">予定</label>
+    <textarea id="scheduleEdit" placeholder="予定を入力"></textarea>
+    <label>TODO</label>
+    <div id="todoEditList" class="todo-list"></div>
+    <div class="dialog-actions">
+      <button id="cancelBtn">キャンセル</button>
+      <button class="primary" id="saveBtn">保存して同期</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DOW=['日','月','火','水','木','金','土'];
+const WEEKS_KEY='planner2-weeks-db-v1';
+const TODOS_KEY='planner2-todos-db-v1';
+const GH_KEY='planner2-github-cfg-v1';
+const GIST_FILE='route-planner2-data.json';
+
+let weeksDB={};
+let todosDB={items:[]};
+let ghCfg={token:'',gistId:''};
+let selectedDate=null;
+let syncing=false;
+let shown=new Date();
+shown.setDate(1);
+
+function pad(n){return String(n).padStart(2,'0')}
+function fmt(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
+function mondayOf(d){const x=new Date(d);const day=x.getDay();x.setDate(x.getDate()+(day===0?-6:1-day));return x}
+function emptyWeek(){
+  return {days:Array.from({length:7},()=>({schedule:'',todos:Array.from({length:4},()=>({checked:false,text:'',todoId:null}))})),memo:''};
+}
+function weekAndIndex(date){
+  const m=mondayOf(date),key=fmt(m),idx=(date.getDay()+6)%7;
+  if(!weeksDB[key])weeksDB[key]=emptyWeek();
+  return {key,idx,week:weeksDB[key]};
+}
+function setStatus(t,k=''){const e=document.getElementById('status');e.textContent=t;e.className='status '+k}
+function loadLocal(){
+  try{weeksDB=JSON.parse(localStorage.getItem(WEEKS_KEY)||'{}')||{}}catch(e){weeksDB={}}
+  try{todosDB=JSON.parse(localStorage.getItem(TODOS_KEY)||'{"items":[]}')||{items:[]}}catch(e){todosDB={items:[]}}
+  try{ghCfg=JSON.parse(localStorage.getItem(GH_KEY)||'{}')||{}}catch(e){ghCfg={}}
+}
+function saveLocal(){
+  localStorage.setItem(WEEKS_KEY,JSON.stringify(weeksDB));
+  localStorage.setItem(TODOS_KEY,JSON.stringify(todosDB));
+}
+function headers(){
+  return {'Authorization':'Bearer '+ghCfg.token,'Accept':'application/vnd.github+json','Content-Type':'application/json'};
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+async function pull(){
+  if(syncing)return;
+  if(!ghCfg.token||!ghCfg.gistId){
+    setStatus('週間カレンダーでGitHubトークンとGist IDを設定してください','err');
+    render();return;
+  }
+  syncing=true;setStatus('クラウドから最新予定を読み込んでいます…','syncing');
+  try{
+    const r=await fetch('https://api.github.com/gists/'+ghCfg.gistId,{headers:headers()});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    const file=data.files&&data.files[GIST_FILE];
+    if(!file)throw new Error('データファイルが見つかりません');
+    let content=file.content;
+    if(file.truncated&&file.raw_url)content=await(await fetch(file.raw_url)).text();
+    const parsed=JSON.parse(content);
+    if(parsed.weeks)weeksDB=parsed.weeks;
+    if(parsed.todos)todosDB=parsed.todos;
+    saveLocal();render();
+    setStatus('最新予定を読み込みました：'+new Date().toLocaleTimeString('ja-JP'),'ok');
+  }catch(e){console.error(e);setStatus('読込に失敗しました。接続設定を確認してください','err');render()}
+  finally{syncing=false}
+}
+async function push(){
+  if(!ghCfg.token||!ghCfg.gistId){setStatus('GitHub接続情報がありません','err');return}
+  syncing=true;setStatus('保存して同期しています…','syncing');
+  const body={description:'進路相談室 ROUTE - 別ユーザー用週間カレンダー データ',public:false,files:{
+    [GIST_FILE]:{content:JSON.stringify({version:2,updatedAt:new Date().toISOString(),weeks:weeksDB,todos:todosDB},null,2)}
+  }};
+  try{
+    const r=await fetch('https://api.github.com/gists/'+ghCfg.gistId,{method:'PATCH',headers:headers(),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    saveLocal();render();setStatus('予定を保存・同期しました：'+new Date().toLocaleTimeString('ja-JP'),'ok');
+  }catch(e){console.error(e);setStatus('保存に失敗しました','err')}
+  finally{syncing=false}
+}
+
+function render(){
+  document.getElementById('monthLabel').textContent=`${shown.getFullYear()}年 ${shown.getMonth()+1}月`;
+  const root=document.getElementById('days');root.innerHTML='';
+  const first=new Date(shown.getFullYear(),shown.getMonth(),1);
+  const last=new Date(shown.getFullYear(),shown.getMonth()+1,0);
+  for(let i=0;i<first.getDay();i++){const e=document.createElement('div');e.className='day empty';root.appendChild(e)}
+  for(let n=1;n<=last.getDate();n++){
+    const d=new Date(shown.getFullYear(),shown.getMonth(),n);
+    const {week,idx}=weekAndIndex(d),dayData=week.days[idx]||{};
+    const schedule=(dayData.schedule||'').trim();
+    const todoTexts=(dayData.todos||[]).filter(t=>t&&t.text&&!t.checked).map(t=>t.text);
+    const cell=document.createElement('div');
+    const now=new Date();
+    const today=(d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate());
+    cell.className='day '+(d.getDay()===0?'sun':d.getDay()===6?'sat':'')+(today?' today':'');
+    cell.innerHTML=`<div class="num">${n}</div>${schedule?`<div class="event">${escapeHtml(schedule)}</div>`:''}${todoTexts.slice(0,4).map(t=>`<div class="todo">□ ${escapeHtml(t)}</div>`).join('')}`;
+    cell.addEventListener('click',()=>openEdit(d));
+    root.appendChild(cell);
+  }
+  const total=first.getDay()+last.getDate();
+  for(let i=total;i<42;i++){const e=document.createElement('div');e.className='day empty';root.appendChild(e)}
+}
+function openEdit(d){
+  selectedDate=d;
+  const {week,idx}=weekAndIndex(d),dayData=week.days[idx];
+  document.getElementById('editTitle').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DOW[d.getDay()]}）`;
+  document.getElementById('scheduleEdit').value=dayData.schedule||'';
+  const list=document.getElementById('todoEditList');list.innerHTML='';
+  dayData.todos.forEach((t,i)=>{
+    const row=document.createElement('div');row.className='todo-row';
+    row.innerHTML=`<input type="checkbox" ${t.checked?'checked':''}><input type="text" value="${escapeHtml(t.text||'')}" placeholder="TODO ${i+1}">`;
+    list.appendChild(row);
+  });
+  document.getElementById('modal').classList.add('open');
+}
+function closeEdit(){document.getElementById('modal').classList.remove('open');selectedDate=null}
+document.getElementById('cancelBtn').onclick=closeEdit;
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeEdit()});
+document.getElementById('saveBtn').onclick=async()=>{
+  if(!selectedDate)return;
+  const {week,idx}=weekAndIndex(selectedDate),dayData=week.days[idx];
+  dayData.schedule=document.getElementById('scheduleEdit').value;
+  const rows=[...document.querySelectorAll('#todoEditList .todo-row')];
+  dayData.todos=rows.map((r,i)=>({
+    checked:r.querySelector('input[type="checkbox"]').checked,
+    text:r.querySelector('input[type="text"]').value,
+    todoId:dayData.todos[i]?.todoId||null
+  }));
+  saveLocal();closeEdit();render();await push();
+};
+document.getElementById('prevBtn').onclick=()=>{shown.setMonth(shown.getMonth()-1);render()};
+document.getElementById('nextBtn').onclick=()=>{shown.setMonth(shown.getMonth()+1);render()};
+document.getElementById('todayBtn').onclick=()=>{
+  shown=new Date();
+  shown.setDate(1);
+  render();
+};
+
+document.getElementById('reloadBtn').onclick=pull;
+
+function renderPrint(){
+  const root=document.getElementById('printCalendar');
+  root.innerHTML=`<div class="excel-title">${shown.getFullYear()}年 ${shown.getMonth()+1}月　月間カレンダー</div>`;
+  const head=document.createElement('div');head.className='excel-week-head';
+  head.innerHTML=DOW.map((d,i)=>`<div class="${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('');
+  root.appendChild(head);
+
+  const grid=document.createElement('div');grid.className='excel-days';
+  const first=new Date(shown.getFullYear(),shown.getMonth(),1);
+  const last=new Date(shown.getFullYear(),shown.getMonth()+1,0);
+  for(let i=0;i<first.getDay();i++){const e=document.createElement('div');e.className='excel-day empty';grid.appendChild(e)}
+  for(let n=1;n<=last.getDate();n++){
+    const d=new Date(shown.getFullYear(),shown.getMonth(),n);
+    const {week,idx}=weekAndIndex(d),dayData=week.days[idx]||{};
+    const schedule=(dayData.schedule||'').trim();
+    const todos=(dayData.todos||[]).filter(t=>t&&t.text&&!t.checked).map(t=>t.text);
+    const e=document.createElement('div');e.className='excel-day '+(d.getDay()===0?'sun':d.getDay()===6?'sat':'');
+    e.innerHTML=`<div class="excel-num">${n}</div>${schedule?`<div class="excel-event">${escapeHtml(schedule)}</div>`:''}${todos.slice(0,4).map(t=>`<div class="excel-todo">□ ${escapeHtml(t)}</div>`).join('')}`;
+    grid.appendChild(e);
+  }
+  const total=first.getDay()+last.getDate();
+  for(let i=total;i<42;i++){const e=document.createElement('div');e.className='excel-day empty';grid.appendChild(e)}
+  root.appendChild(grid);
+}
+document.getElementById('printBtn').onclick=()=>{renderPrint();window.print()};
+
+window.addEventListener('focus',()=>{if(navigator.onLine)pull()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&navigator.onLine)pull()});
+loadLocal();render();pull();setInterval(()=>{if(document.visibilityState==='visible'&&navigator.onLine)pull()},30000);
+</script>
+</body>
+</html>
