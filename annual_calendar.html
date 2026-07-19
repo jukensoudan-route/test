@@ -161,15 +161,6 @@ main{max-width:1500px;margin:auto;padding:14px}
 }
 
 
-.todo-panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}
-.todo-panel{background:#fff;border:1px solid #d9e2e6;border-radius:10px;padding:10px}
-.todo-panel h3{margin:0 0 8px;font-size:14px}
-.todo-panel-list{display:grid;gap:6px;max-height:180px;overflow:auto}
-.todo-panel-item{display:flex;align-items:center;gap:7px;padding:6px 7px;border:1px solid #e5ecef;border-radius:7px;background:#fbfdfe}
-.todo-panel-item input[type="checkbox"]{width:16px;height:16px}
-.todo-panel-item .text{flex:1;min-width:0;font-size:12px;word-break:break-word}
-.todo-panel-empty{font-size:12px;color:#7a858a;padding:8px}
-@media(max-width:700px){.todo-panels{grid-template-columns:1fr}.todo-panel-list{max-height:150px}}
 
 
 .todo-combo{position:relative;flex:1;min-width:0}
@@ -208,6 +199,8 @@ main{max-width:1500px;margin:auto;padding:14px}
       </div>
     </div>
     <div class="actions">
+      <a class="btn" href="./?view=todo">TODOリスト</a>
+      <a class="btn" href="./?view=done">完了リスト</a>
       <a class="btn" href="./">週間カレンダー</a>
       <a class="btn" href="monthly_calendar.html">月間カレンダー</a>
       <button id="todayBtn">今日</button>
@@ -344,8 +337,7 @@ function renderSharedTodoPanels(){
     check.addEventListener('change',async()=>{
       item.done=check.checked;
       saveLocal();
-      renderSharedTodoPanels();
-      if(typeof render==='function') render();
+          if(typeof render==='function') render();
       if(typeof push==='function') await push();
     });
     return row;

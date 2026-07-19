@@ -129,15 +129,6 @@ main{max-width:1200px;margin:auto;padding:14px}
   @page{size:A4 landscape;margin:0}
 }
 
-.todo-panels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}
-.todo-panel{background:#fff;border:1px solid #d9e2e6;border-radius:10px;padding:10px}
-.todo-panel h3{margin:0 0 8px;font-size:14px}
-.todo-panel-list{display:grid;gap:6px;max-height:180px;overflow:auto}
-.todo-panel-item{display:flex;align-items:center;gap:7px;padding:6px 7px;border:1px solid #e5ecef;border-radius:7px;background:#fbfdfe}
-.todo-panel-item input[type="checkbox"]{width:16px;height:16px}
-.todo-panel-item .text{flex:1;min-width:0;font-size:12px;word-break:break-word}
-.todo-panel-empty{font-size:12px;color:#7a858a;padding:8px}
-@media(max-width:700px){.todo-panels{grid-template-columns:1fr}.todo-panel-list{max-height:150px}}
 
 
 .todo-combo{position:relative;flex:1;min-width:0}
@@ -171,6 +162,8 @@ main{max-width:1200px;margin:auto;padding:14px}
       <div class="sub">週間カレンダーと同じGitHub Gistで自動同期</div>
     </div>
     <div class="actions">
+      <a class="btn" href="./?view=todo">TODOリスト</a>
+      <a class="btn" href="./?view=done">完了リスト</a>
       <a class="btn" href="./">週間カレンダー</a>
       <a class="btn" href="annual_calendar.html">年間カレンダー</a>
       <button id="reloadBtn">最新を読込</button>
@@ -187,17 +180,6 @@ main{max-width:1200px;margin:auto;padding:14px}
     <button id="nextBtn">翌月 →</button>
     <button id="todayBtn">今日</button>
   </div>
-  
-<div class="todo-panels">
-  <section class="todo-panel">
-    <h3>TODOリスト</h3>
-    <div id="sharedTodoList" class="todo-panel-list"></div>
-  </section>
-  <section class="todo-panel">
-    <h3>完了リスト</h3>
-    <div id="sharedDoneList" class="todo-panel-list"></div>
-  </section>
-</div>
 <div class="calendar">
     <div class="week-head">
       <div class="sun">日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="sat">土</div>
@@ -438,8 +420,7 @@ function renderSharedTodoPanels(){
     check.addEventListener('change',async()=>{
       item.done=check.checked;
       saveLocal();
-      renderSharedTodoPanels();
-      if(typeof render==='function') render();
+          if(typeof render==='function') render();
       if(typeof push==='function') await push();
     });
     return row;

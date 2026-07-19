@@ -2138,6 +2138,11 @@ function linkOrCreateTodo(todo){
     startGoogleAutoSync();
 
     initializePlanner();
+
+    const requestedView = new URLSearchParams(window.location.search).get('view');
+    if (requestedView === 'todo' || requestedView === 'done') {
+      switchTab(requestedView);
+    }
   </script>
 
 <script>
