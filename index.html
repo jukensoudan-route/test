@@ -1,587 +1,130 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>陸上部 練習メニュー管理</title>
-  <style>
-    :root{
-      --bg:#f3f6f9;
-      --panel:#ffffff;
-      --text:#17202a;
-      --muted:#667085;
-      --line:#dfe5ec;
-      --brand:#00a878;
-      --brand-dark:#007a5a;
-      --accent:#d9f7ec;
-      --danger:#c92a2a;
-      --shadow:0 10px 30px rgba(22,34,48,.08);
-      --radius:16px;
-    }
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{
-      margin:0;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;
-      background:var(--bg);
-      color:var(--text);
-    }
-    button,input,textarea,select{font:inherit}
-    button{cursor:pointer}
-    header{
-      position:sticky;
-      top:0;
-      z-index:20;
-      background:linear-gradient(135deg,#00b884,#008f68);
-      color:white;
-      box-shadow:0 3px 16px rgba(0,0,0,.18);
-    }
-    .header-inner{
-      max-width:1400px;
-      margin:auto;
-      padding:14px 18px 10px;
-    }
-    .topline{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:10px;
-    }
-    h1{font-size:21px;margin:0;letter-spacing:.03em}
-    .save-state{font-size:12px;opacity:.9}
-    nav{
-      display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:8px;
-    }
-    nav button{
-      border:1px solid rgba(255,255,255,.25);
-      background:rgba(255,255,255,.10);
-      color:white;
-      border-radius:10px;
-      padding:9px 6px;
-      font-weight:700;
-      font-size:13px;
-    }
-    nav button.active{background:white;color:var(--brand)}
-    main{max-width:1400px;margin:auto;padding:18px}
-    .view{display:none}
-    .view.active{display:block}
-    .panel{
-      background:var(--panel);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-      margin-bottom:16px;
-    }
-    .panel-title{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      margin-bottom:14px;
-    }
-    .panel-title h2,.panel-title h3{margin:0}
-    .muted{color:var(--muted)}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
-    input,textarea,select{
-      width:100%;
-      border:1px solid #cfd7e2;
-      border-radius:10px;
-      padding:10px 11px;
-      background:white;
-      color:var(--text);
-    }
-    textarea{min-height:90px;resize:vertical}
-    .field{margin-bottom:12px}
-    .btn{
-      border:none;
-      border-radius:10px;
-      padding:10px 14px;
-      font-weight:800;
-    }
-    .btn-primary{background:var(--brand);color:white}
-    .btn-primary:hover{background:var(--brand-dark)}
-    .btn-secondary:hover{background:#d4f2e7}
-    input:focus,textarea:focus,select:focus{
-      outline:none;
-      border-color:#00a878;
-      box-shadow:0 0 0 3px rgba(0,168,120,.14);
-    }
-    .section-block{border-color:#cfeee2}
-    .panel{border-color:#d6ece4}
-
-    .btn-secondary{background:#e4f7f0;color:#075f49}
-    .btn-danger{background:#fff0f0;color:var(--danger);border:1px solid #ffd0d0}
-    .btn-small{padding:7px 10px;font-size:12px}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-
-    :root{
-      --cat-overall:#2563eb;
-      --cat-strength:#16a34a;
-      --cat-sprint:#ef4444;
-      --cat-hurdle:#f97316;
-      --cat-jump:#8b5cf6;
-      --cat-throw:#a16207;
-      --cat-distance:#0891b2;
-    }
-    .cat-overall{--cat-color:var(--cat-overall);--cat-soft:#dbeafe}
-    .cat-strength{--cat-color:var(--cat-strength);--cat-soft:#dcfce7}
-    .cat-sprint{--cat-color:var(--cat-sprint);--cat-soft:#fee2e2}
-    .cat-hurdle{--cat-color:var(--cat-hurdle);--cat-soft:#ffedd5}
-    .cat-jump{--cat-color:var(--cat-jump);--cat-soft:#ede9fe}
-    .cat-throw{--cat-color:var(--cat-throw);--cat-soft:#fef3c7}
-    .cat-distance{--cat-color:var(--cat-distance);--cat-soft:#cffafe}
-
-    .category-chip[class*="cat-"]{
-      background:var(--cat-soft);
-      color:var(--cat-color);
-      border:1px solid color-mix(in srgb,var(--cat-color) 28%, white);
-    }
-    .menu-card[class*="cat-"]{
-      border-left:7px solid var(--cat-color);
-      background:linear-gradient(90deg,var(--cat-soft),#fff 30%);
-    }
-    .section-block[class*="cat-"]{
-      border:2px solid color-mix(in srgb,var(--cat-color) 28%, white);
-    }
-    .section-block[class*="cat-"] .section-header{
-      background:var(--cat-soft);
-      border-bottom-color:color-mix(in srgb,var(--cat-color) 25%, white);
-    }
-    .section-block[class*="cat-"] .section-header h3{
-      color:var(--cat-color);
-    }
-    .selected-item[class*="cat-"]{
-      border-left:6px solid var(--cat-color);
-      background:linear-gradient(90deg,var(--cat-soft),#fff 35%);
-    }
-    .calendar-group[class*="cat-"]{
-      border-left:6px solid var(--cat-color);
-      background:var(--cat-soft);
-      border-radius:9px;
-      padding:9px 11px;
-    }
-    .calendar-group[class*="cat-"] b{
-      color:var(--cat-color);
-    }
-    .color-legend{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin:0 0 14px;
-    }
-    .legend-item{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 9px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:800;
-      background:var(--cat-soft);
-      color:var(--cat-color);
-      border:1px solid color-mix(in srgb,var(--cat-color) 25%, white);
-    }
-    .legend-dot{
-      width:10px;height:10px;border-radius:50%;background:var(--cat-color);
-    }
-
-    .category-chip{
-      display:inline-flex;
-      align-items:center;
-      border-radius:999px;
-      padding:5px 9px;
-      font-size:12px;
-      font-weight:800;
-      background:var(--accent);
-      color:var(--brand-dark);
-    }
-    .menu-list{display:grid;gap:10px}
-    .menu-card{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:13px;
-      background:#f8fffc;
-    }
-    .menu-card-top{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:flex-start;
-    }
-    .menu-card h4{margin:0 0 6px;font-size:16px}
-    .menu-meta{
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-      margin:7px 0;
-      font-size:12px;
-      color:var(--muted);
-    }
-    .day-builder{
-      display:grid;
-      grid-template-columns:280px 1fr;
-      gap:16px;
-    }
-    .sticky-side{position:sticky;top:125px;align-self:start}
-    .section-block{
-      border:1px solid var(--line);
-      border-radius:14px;
-      overflow:hidden;
-      margin-bottom:14px;
-      background:white;
-    }
-    .section-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:12px 14px;
-      background:#eefbf6;
-      border-bottom:1px solid var(--line);
-    }
-    .section-header h3{margin:0;font-size:16px}
-
-    .section-picker{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      gap:8px;
-      padding:10px;
-      border-bottom:1px solid var(--line);
-      background:#fff;
-    }
-    .section-picker select{
-      min-width:0;
-      border-left:6px solid var(--cat-color);
-      background:var(--cat-soft);
-      font-weight:700;
-    }
-    .section-picker .btn{
-      white-space:nowrap;
-    }
-
-    .selected-list{padding:10px;min-height:70px}
-    .selected-item{
-      display:grid;
-      grid-template-columns:28px 1fr auto;
-      gap:9px;
-      align-items:center;
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:10px;
-      margin-bottom:8px;
-      background:#fff;
-    }
-    .drag{font-weight:900;color:#98a2b3;user-select:none}
-    .selected-item strong{display:block}
-    .selected-item small{color:var(--muted)}
-    .empty{
-      text-align:center;
-      color:#98a2b3;
-      padding:18px 8px;
-      border:1px dashed #ccd5df;
-      border-radius:10px;
-    }
-    .filters{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      margin-bottom:12px;
-    }
-    .summary{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:12px;
-      margin-bottom:16px;
-    }
-    .stat{
-      background:white;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      box-shadow:var(--shadow);
-    }
-    .stat strong{font-size:24px;display:block}
-    .calendar-list{display:grid;gap:10px}
-    .calendar-day{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:14px;
-      background:white;
-    }
-    .calendar-day h3{margin:0 0 8px}
-    .calendar-group{margin:8px 0}
-    .calendar-group b{font-size:13px}
-    .calendar-group ul{margin:6px 0 0 20px;padding:0}
-    .toolbar{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-    .toolbar > *{min-width:180px}
-    .notice{
-      background:#fff8e6;
-      border:1px solid #f3d98f;
-      border-radius:12px;
-      padding:12px;
-      color:#6d5311;
-      margin-bottom:14px;
-    }
-
-    .auth-bar{
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-    }
-    .auth-bar button{
-      border:1px solid rgba(255,255,255,.35);
-      background:rgba(255,255,255,.14);
-      color:white;border-radius:9px;padding:7px 10px;font-weight:700;
-    }
-    .login-overlay{
-      position:fixed;inset:0;z-index:100;background:rgba(5,31,25,.82);
-      display:flex;align-items:center;justify-content:center;padding:18px;
-    }
-    .login-overlay.hidden{display:none}
-    .login-card{
-      width:min(440px,100%);background:white;border-radius:18px;
-      padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.28);
-    }
-    .login-card h2{margin:0 0 6px}
-    .login-card .btn{width:100%;margin-top:8px}
-    .db-badge{
-      display:inline-flex;align-items:center;gap:6px;padding:5px 9px;
-      border-radius:999px;font-size:12px;font-weight:800;
-      background:rgba(255,255,255,.16);color:white;
-    }
-    .db-dot{width:8px;height:8px;border-radius:50%;background:#ffd43b}
-    .db-dot.online{background:#69db7c}
-    .db-dot.offline{background:#ff8787}
-
-    @media(max-width:900px){
-      .grid-2,.grid-3,.summary,.day-builder{grid-template-columns:1fr}
-      .sticky-side{position:static}
-      nav{grid-template-columns:repeat(2,1fr)}
-      .filters{grid-template-columns:1fr}
-    }
-    @media print{
-      header,.no-print,#menuLibraryPanel,#builderSide{display:none !important}
-      body{background:white}
-      main{max-width:none;padding:0}
-      .panel,.section-block,.calendar-day{box-shadow:none;break-inside:avoid}
-      .view{display:none!important}
-      .view.print-target{display:block!important}
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>陸上部 練習メニュー管理</title>
+<style>
+:root{
+  --emerald:#00a878;--emerald-dark:#007a5a;--bg:#f4f7f6;--panel:#fff;
+  --text:#18211f;--muted:#667085;--line:#dbe6e2;--danger:#c92a2a;
+  --overall:#2563eb;--strength:#16a34a;--sprint:#ef4444;--hurdle:#f97316;
+  --jump:#8b5cf6;--throw:#a16207;--distance:#0891b2;
+}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#00b884,var(--emerald-dark));color:#fff;box-shadow:0 3px 18px #0003}
+.head{max-width:1500px;margin:auto;padding:12px 16px}.headtop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:20px;margin:0}.status{display:flex;align-items:center;gap:8px;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:#ffd43b}.dot.online{background:#69db7c}.dot.offline{background:#ff8787}
+nav{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:10px}nav button{border:1px solid #ffffff55;background:#ffffff18;color:#fff;border-radius:9px;padding:8px 5px;font-weight:800;font-size:12px}nav button.active{background:#fff;color:var(--emerald-dark)}
+main{max-width:1500px;margin:auto;padding:16px}.view{display:none}.view.active{display:block}
+.panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;margin-bottom:15px;box-shadow:0 9px 25px #183c2d12}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.builder{display:grid;grid-template-columns:280px 1fr;gap:14px}.sticky{position:sticky;top:112px;align-self:start}
+.field{margin-bottom:11px}label{display:block;font-size:13px;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;border:1px solid #cad7d2;border-radius:9px;padding:9px;background:#fff}textarea{min-height:80px}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--emerald);box-shadow:0 0 0 3px #00a87822}
+.actions{display:flex;gap:7px;flex-wrap:wrap}.btn{border:0;border-radius:9px;padding:9px 12px;font-weight:800}.primary{background:var(--emerald);color:#fff}.secondary{background:#e4f7f0;color:#075f49}.danger{background:#fff0f0;color:var(--danger);border:1px solid #ffd1d1}.small{padding:6px 8px;font-size:12px}
+.notice{background:#effbf6;border:1px solid #bce9d7;border-radius:10px;padding:10px;margin-bottom:12px;color:#17654e}
+.legend{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.chip{display:inline-flex;gap:5px;align-items:center;padding:5px 8px;border-radius:999px;font-weight:800;font-size:12px;background:var(--soft);color:var(--cat)}.chip i{width:9px;height:9px;border-radius:50%;background:var(--cat)}
+.cat-overall{--cat:var(--overall);--soft:#dbeafe}.cat-strength{--cat:var(--strength);--soft:#dcfce7}.cat-sprint{--cat:var(--sprint);--soft:#fee2e2}.cat-hurdle{--cat:var(--hurdle);--soft:#ffedd5}.cat-jump{--cat:var(--jump);--soft:#ede9fe}.cat-throw{--cat:var(--throw);--soft:#fef3c7}.cat-distance{--cat:var(--distance);--soft:#cffafe}
+.section{border:2px solid color-mix(in srgb,var(--cat) 25%,white);border-radius:12px;overflow:hidden;margin-bottom:11px}.section h3{margin:0;padding:10px 12px;background:var(--soft);color:var(--cat);font-size:15px}.picker{display:grid;grid-template-columns:1fr auto;gap:7px;padding:9px;border-bottom:1px solid var(--line)}.picker select{border-left:6px solid var(--cat);background:var(--soft)}
+.items{padding:9px}.item{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;border-left:6px solid var(--cat);background:linear-gradient(90deg,var(--soft),#fff 40%);padding:8px;border-radius:8px;margin-bottom:6px}.item small{color:var(--muted)}
+.menu-list{display:grid;gap:9px}.menu{border:1px solid var(--line);border-left:7px solid var(--cat);border-radius:11px;padding:11px;background:linear-gradient(90deg,var(--soft),#fff 32%)}.menu h4{margin:0 0 5px}.meta{color:var(--muted);font-size:12px;margin:5px 0}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.empty{padding:16px;text-align:center;color:#98a2b3;border:1px dashed #ccd8d3;border-radius:9px}
+.week-wrap{overflow:auto;max-height:calc(100vh - 190px);border:1px solid var(--line);border-radius:12px}.week{border-collapse:separate;border-spacing:0;min-width:1450px;width:100%}.week th,.week td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px;vertical-align:top}.week thead th{position:sticky;top:0;z-index:5;background:#e9faf3;min-width:180px}.week thead th:first-child{left:0;z-index:7}.week tbody th{position:sticky;left:0;z-index:4;min-width:190px;background:var(--soft);color:var(--cat);border-left:7px solid var(--cat)}.weekcell{min-height:105px}.weekitem{display:grid;grid-template-columns:1fr auto;gap:5px;background:var(--soft);border-left:5px solid var(--cat);padding:5px 6px;border-radius:7px;margin-top:5px;font-size:12px;font-weight:800}.x{border:0;border-radius:5px;background:#fff9;color:#b42318;font-weight:900}
+.login{position:fixed;inset:0;z-index:100;background:#082d258c;display:flex;align-items:center;justify-content:center;padding:16px}.login.hidden{display:none}.loginbox{background:#fff;border-radius:16px;padding:21px;width:min(430px,100%);box-shadow:0 20px 60px #0005}.loginbox h2{margin:0 0 5px}.muted{color:var(--muted)}
+@media(max-width:900px){nav{grid-template-columns:repeat(2,1fr)}.grid2,.builder{grid-template-columns:1fr}.sticky{position:static}.filters{grid-template-columns:1fr}.week-wrap{max-height:none}}
+@media print{header,.no-print,.login{display:none!important}body{background:#fff}.panel{box-shadow:none}.view{display:none!important}.view.print{display:block!important}}
+</style>
 </head>
 <body>
-
-<div class="login-overlay hidden" id="loginOverlay">
-  <div class="login-card">
-    <h2>コーチログイン</h2>
-    <p class="muted">登録されたコーチ全員で、同じメニューと練習予定を共有します。</p>
-    <div class="field">
-      <label>メールアドレス</label>
-      <input type="email" id="loginEmail" autocomplete="email">
-    </div>
-    <div class="field">
-      <label>パスワード</label>
-      <input type="password" id="loginPassword" autocomplete="current-password">
-    </div>
-    <button class="btn btn-primary" id="loginButton">ログイン</button>
-    <button class="btn btn-secondary" id="registerAccountButton">新しいコーチアカウントを作成</button>
-    <p class="muted" id="loginMessage"></p>
-  </div>
+<div id="login" class="login hidden">
+ <div class="loginbox">
+  <h2>コーチログイン</h2>
+  <p class="muted">同じチームにログインしたコーチ全員で、練習データを共有します。</p>
+  <div class="field"><label>メールアドレス</label><input id="email" type="email"></div>
+  <div class="field"><label>パスワード</label><input id="password" type="password"></div>
+  <button id="loginBtn" class="btn primary" style="width:100%">ログイン</button>
+  <button id="registerBtn" class="btn secondary" style="width:100%;margin-top:7px">コーチアカウント作成</button>
+  <p id="loginMsg" class="muted"></p>
+ </div>
 </div>
 
-<header>
-  <div class="header-inner">
-    <div class="topline">
-      <h1>陸上部 練習メニュー管理</h1>
-      <div class="auth-bar">
-        <span class="db-badge"><span class="db-dot" id="dbDot"></span><span id="dbStatus">接続確認中</span></span>
-        <span class="save-state" id="saveState">保存準備中</span>
-        <button id="logoutButton" style="display:none">ログアウト</button>
-      </div>
-    </div>
-    <nav>
-      <button data-view="today" class="active">今日・日別</button>
-      <button data-view="builder">練習作成</button>
-      <button data-view="menus">メニュー一覧</button>
-      <button data-view="register">メニュー登録</button>
-    </nav>
-  </div>
-</header>
+<header><div class="head">
+ <div class="headtop"><h1>陸上部 練習メニュー管理</h1>
+  <div class="status"><span id="dot" class="dot"></span><span id="dbstatus">確認中</span><span id="savestatus"></span><button id="logout" class="btn secondary small" style="display:none">ログアウト</button></div>
+ </div>
+ <nav>
+  <button class="active" data-view="today">今日・一覧</button>
+  <button data-view="daily">日別作成</button>
+  <button data-view="weekly">週間入力</button>
+  <button data-view="menus">メニュー一覧</button>
+  <button data-view="register">メニュー登録</button>
+ </nav>
+</div></header>
 
 <main>
-  <section id="view-today" class="view active">
-    <div class="summary">
-      <div class="stat"><span class="muted">登録メニュー</span><strong id="statMenus">0</strong></div>
-      <div class="stat"><span class="muted">作成済み日数</span><strong id="statDays">0</strong></div>
-      <div class="stat"><span class="muted">本日のメニュー数</span><strong id="statToday">0</strong></div>
-      <div class="stat"><span class="muted">種目カテゴリー</span><strong>7</strong></div>
-    </div>
+<section id="v-today" class="view active">
+ <div class="panel">
+  <div class="toolbar no-print"><input id="todayDate" type="date" style="width:auto"><div class="actions"><button id="editDay" class="btn secondary">この日を編集</button><button id="printDay" class="btn primary">印刷</button></div></div>
+  <div id="todayContent"></div>
+ </div>
+ <div class="panel"><h2>作成済み練習一覧</h2><div id="dayList"></div></div>
+</section>
 
-    <div class="panel">
-      <div class="toolbar no-print">
-        <input type="date" id="todayDate">
-        <div class="actions">
-          <button class="btn btn-secondary" id="editSelectedDay">この日を編集</button>
-          <button class="btn btn-primary" id="printDay">この日を印刷</button>
-        </div>
-      </div>
-      <div id="todayContent"></div>
-    </div>
+<section id="v-daily" class="view">
+ <div class="notice">各欄のプルダウンからメニューを選択し、「追加」を押します。</div>
+ <div class="builder">
+  <aside class="panel sticky no-print">
+   <div class="field"><label>日付</label><input id="dailyDate" type="date"></div>
+   <div class="field"><label>テーマ</label><input id="theme"></div>
+   <div class="field"><label>連絡事項</label><textarea id="notes"></textarea></div>
+   <div class="actions"><button id="saveDay" class="btn primary">保存</button><button id="copyPrev" class="btn secondary">前日コピー</button><button id="deleteDay" class="btn danger">削除</button></div>
+  </aside>
+  <div id="dailySections"></div>
+ </div>
+</section>
 
-    <div class="panel">
-      <div class="panel-title">
-        <h2>作成済み練習一覧</h2>
-      </div>
-      <div id="calendarList" class="calendar-list"></div>
-    </div>
-  </section>
+<section id="v-weekly" class="view">
+ <div class="panel">
+  <div class="toolbar no-print">
+   <button id="prevWeek" class="btn secondary">←前の週</button>
+   <div class="actions"><button id="thisWeek" class="btn secondary">今週</button><input id="weekDate" type="date" style="width:auto"><strong id="weekTitle"></strong></div>
+   <div class="actions"><button id="saveWeek" class="btn primary">1週間を保存</button><button id="nextWeek" class="btn secondary">次の週→</button></div>
+  </div>
+  <div class="week-wrap"><table class="week"><thead id="weekHead"></thead><tbody id="weekBody"></tbody></table></div>
+ </div>
+</section>
 
-  <section id="view-builder" class="view">
-    <div class="notice">
-      各欄のプルダウンからメニューを選択し、「追加」を押してください。複数のメニューを順番に登録できます。
-    </div>
-    <div class="color-legend">
-          <span class="legend-item cat-overall"><span class="legend-dot"></span>全体</span>
-          <span class="legend-item cat-strength"><span class="legend-dot"></span>筋トレ</span>
-          <span class="legend-item cat-sprint"><span class="legend-dot"></span>短距離</span>
-          <span class="legend-item cat-hurdle"><span class="legend-dot"></span>ハードル</span>
-          <span class="legend-item cat-jump"><span class="legend-dot"></span>跳躍</span>
-          <span class="legend-item cat-throw"><span class="legend-dot"></span>投擲</span>
-          <span class="legend-item cat-distance"><span class="legend-dot"></span>長距離</span>
-        </div>
+<section id="v-menus" class="view">
+ <div class="panel"><h2>メニュー一覧</h2>
+  <div class="legend" id="legend"></div>
+  <div class="filters no-print"><select id="filterCat"></select><input id="filterText" placeholder="検索"></div>
+  <div id="menuList" class="menu-list"></div>
+ </div>
+</section>
 
-    <div class="day-builder">
-      <aside id="builderSide" class="panel sticky-side no-print">
-        <div class="panel-title"><h3>練習日</h3></div>
-        <div class="field">
-          <label>日付</label>
-          <input type="date" id="builderDate">
-        </div>
-        <div class="field">
-          <label>練習テーマ</label>
-          <input id="dayTheme" placeholder="例：スピード持久・技術確認">
-        </div>
-        <div class="field">
-          <label>連絡事項</label>
-          <textarea id="dayNotes" placeholder="集合時間、場所、注意点など"></textarea>
-        </div>
-        <div class="actions">
-          <button class="btn btn-primary" id="saveDay">保存</button>
-          <button class="btn btn-secondary" id="copyPrevious">前日をコピー</button>
-          <button class="btn btn-danger" id="deleteDay">この日を削除</button>
-        </div>
-      </aside>
-
-      <div>
-        <div id="builderSections"></div>
-
-        <div class="panel no-print" id="menuLibraryPanel" style="display:none">
-          <div class="panel-title"><h2>一覧から追加</h2></div>
-          <div class="filters">
-            <select id="builderCategoryFilter"></select>
-            <input id="builderSearch" placeholder="メニュー名・内容で検索">
-          </div>
-          <div id="builderMenuLibrary" class="menu-list"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="view-menus" class="view">
-    <div class="panel">
-      <div class="panel-title">
-        <h2>メニュー一覧</h2>
-        <span class="muted" id="menuCountLabel"></span>
-      </div>
-<div class="color-legend">
-          <span class="legend-item cat-overall"><span class="legend-dot"></span>全体</span>
-          <span class="legend-item cat-strength"><span class="legend-dot"></span>筋トレ</span>
-          <span class="legend-item cat-sprint"><span class="legend-dot"></span>短距離</span>
-          <span class="legend-item cat-hurdle"><span class="legend-dot"></span>ハードル</span>
-          <span class="legend-item cat-jump"><span class="legend-dot"></span>跳躍</span>
-          <span class="legend-item cat-throw"><span class="legend-dot"></span>投擲</span>
-          <span class="legend-item cat-distance"><span class="legend-dot"></span>長距離</span>
-        </div>
-      <div class="filters no-print">
-        <select id="menuCategoryFilter"></select>
-        <input id="menuSearch" placeholder="メニュー名・内容で検索">
-      </div>
-      <div id="menuList" class="menu-list"></div>
-    </div>
-  </section>
-
-  <section id="view-register" class="view">
-    <div class="panel">
-      <div class="panel-title">
-        <h2 id="registerTitle">メニュー登録</h2>
-      </div>
-      <input type="hidden" id="editMenuId">
-      <div class="grid-2">
-        <div>
-          <div class="field">
-            <label>メニュー名</label>
-            <input id="menuName" placeholder="例：120m×3＋80m×3">
-          </div>
-          <div class="field">
-            <label>メニュー種別</label>
-            <select id="menuCategory"></select>
-          </div>
-          <div class="field">
-            <label>配置場所</label>
-            <select id="menuPlacement">
-              <option value="middle">種目別・中央</option>
-              <option value="before">練習前半</option>
-              <option value="after">練習後半</option>
-              <option value="both">前半・後半どちらでも</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>内容</label>
-            <textarea id="menuDetail" placeholder="実施方法や流れ"></textarea>
-          </div>
-        </div>
-        <div>
-          <div class="field">
-            <label>本数・セット数</label>
-            <input id="menuSets" placeholder="例：3本×2セット">
-          </div>
-          <div class="field">
-            <label>設定タイム・強度</label>
-            <input id="menuIntensity" placeholder="例：90％、15秒設定">
-          </div>
-          <div class="field">
-            <label>レスト</label>
-            <input id="menuRest" placeholder="例：3分、セット間10分">
-          </div>
-          <div class="field">
-            <label>所要時間</label>
-            <input id="menuDuration" placeholder="例：30分">
-          </div>
-          <div class="field">
-            <label>対象</label>
-            <input id="menuTarget" placeholder="例：短距離全員、1年生">
-          </div>
-          <div class="field">
-            <label>注意点</label>
-            <textarea id="menuCaution" placeholder="フォーム、怪我予防、器具準備など"></textarea>
-          </div>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="btn btn-primary" id="saveMenu">メニューを保存</button>
-        <button class="btn btn-secondary" id="resetMenuForm">入力をリセット</button>
-      </div>
-    </div>
-  </section>
+<section id="v-register" class="view">
+ <div class="panel"><h2 id="formTitle">メニュー登録</h2><input id="editId" type="hidden">
+  <div class="grid2">
+   <div>
+    <div class="field"><label>メニュー名</label><input id="name"></div>
+    <div class="field"><label>種類</label><select id="category"></select></div>
+    <div class="field"><label>配置</label><select id="placement"><option value="middle">種目別・中央</option><option value="before">練習前半</option><option value="after">練習後半</option><option value="both">前半・後半どちらでも</option></select></div>
+    <div class="field"><label>内容</label><textarea id="detail"></textarea></div>
+   </div>
+   <div>
+    <div class="field"><label>本数・セット</label><input id="sets"></div>
+    <div class="field"><label>強度・設定</label><input id="intensity"></div>
+    <div class="field"><label>レスト</label><input id="rest"></div>
+    <div class="field"><label>所要時間</label><input id="duration"></div>
+    <div class="field"><label>対象</label><input id="target"></div>
+    <div class="field"><label>注意点</label><textarea id="caution"></textarea></div>
+   </div>
+  </div>
+  <div class="actions"><button id="saveMenu" class="btn primary">保存</button><button id="resetMenu" class="btn secondary">リセット</button></div>
+ </div>
+</section>
 </main>
 
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
@@ -589,573 +132,129 @@
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
-const CATEGORIES = [
-  "全体メニュー","短距離メニュー","ハードルメニュー","跳躍メニュー",
-  "投擲メニュー","長距離メニュー","筋トレメニュー"
+const TEAM_ID="athletics-club";
+const CATS=["全体メニュー","短距離メニュー","ハードルメニュー","跳躍メニュー","投擲メニュー","長距離メニュー","筋トレメニュー"];
+const SECTIONS=[
+{id:"beforeOverall",label:"練習前半：全体",cat:"全体メニュー",places:["before","both"]},
+{id:"beforeStrength",label:"練習前半：筋トレ",cat:"筋トレメニュー",places:["before","both"]},
+{id:"sprint",label:"短距離",cat:"短距離メニュー",places:["middle","both"]},
+{id:"hurdle",label:"ハードル",cat:"ハードルメニュー",places:["middle","both"]},
+{id:"jump",label:"跳躍",cat:"跳躍メニュー",places:["middle","both"]},
+{id:"throw",label:"投擲",cat:"投擲メニュー",places:["middle","both"]},
+{id:"distance",label:"長距離",cat:"長距離メニュー",places:["middle","both"]},
+{id:"middleStrength",label:"種目別：筋トレ",cat:"筋トレメニュー",places:["middle","both"]},
+{id:"afterStrength",label:"練習後半：筋トレ",cat:"筋トレメニュー",places:["after","both"]},
+{id:"afterOverall",label:"練習後半：全体",cat:"全体メニュー",places:["after","both"]}
 ];
+let menus=[],days={},daily=blankDay(),weekStart=getMonday(todayISO()),weekDraft={};
+let db=null,auth=null,user=null,cloud=false,unsubMenus=null,unsubDays=null;
 
-const SECTIONS = [
-  {id:"beforeOverall", label:"練習前半：全体メニュー", accepts:["全体メニュー"], placement:["before","both"]},
-  {id:"beforeStrength", label:"練習前半：筋トレ", accepts:["筋トレメニュー"], placement:["before","both"]},
-  {id:"sprint", label:"短距離メニュー", accepts:["短距離メニュー"], placement:["middle","both"]},
-  {id:"hurdle", label:"ハードルメニュー", accepts:["ハードルメニュー"], placement:["middle","both"]},
-  {id:"jump", label:"跳躍メニュー", accepts:["跳躍メニュー"], placement:["middle","both"]},
-  {id:"throw", label:"投擲メニュー", accepts:["投擲メニュー"], placement:["middle","both"]},
-  {id:"distance", label:"長距離メニュー", accepts:["長距離メニュー"], placement:["middle","both"]},
-  {id:"middleStrength", label:"種目別：筋トレ", accepts:["筋トレメニュー"], placement:["middle","both"]},
-  {id:"afterStrength", label:"練習後半：筋トレ", accepts:["筋トレメニュー"], placement:["after","both"]},
-  {id:"afterOverall", label:"練習後半：全体メニュー", accepts:["全体メニュー"], placement:["after","both"]}
-];
+function el(id){return document.getElementById(id)}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+function cls(cat){return({"全体メニュー":"cat-overall","筋トレメニュー":"cat-strength","短距離メニュー":"cat-sprint","ハードルメニュー":"cat-hurdle","跳躍メニュー":"cat-jump","投擲メニュー":"cat-throw","長距離メニュー":"cat-distance"})[cat]||""}
+function blankDay(){const sections={};SECTIONS.forEach(s=>sections[s.id]=[]);return{theme:"",notes:"",sections}}
+function todayISO(){const d=new Date();return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function addDays(v,n){const d=new Date(v+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function getMonday(v){const d=new Date(v+"T00:00:00"),w=d.getDay();d.setDate(d.getDate()+(w===0?-6:1-w));return d.toISOString().slice(0,10)}
+function fmt(v){return new Date(v+"T00:00:00").toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short"})}
+function setStatus(t,state=""){el("dbstatus").textContent=t;el("dot").className="dot "+state}
+function localSave(){localStorage.setItem("coachMenus",JSON.stringify(menus));localStorage.setItem("coachDays",JSON.stringify(days))}
+function markSaved(t="保存済み"){el("savestatus").textContent=t+" "+new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}
 
-const starterMenus = [
-  {id:crypto.randomUUID(),name:"ウォーミングアップ",category:"全体メニュー",placement:"before",detail:"ジョグ、動的ストレッチ、基本ドリル",sets:"",intensity:"低〜中",rest:"",duration:"20分",target:"全員",caution:"体調確認を行う"},
-  {id:crypto.randomUUID(),name:"クールダウン",category:"全体メニュー",placement:"after",detail:"軽いジョグと静的ストレッチ",sets:"",intensity:"低",rest:"",duration:"15分",target:"全員",caution:"痛みがある選手は個別対応"},
-  {id:crypto.randomUUID(),name:"120m×3＋80m×3",category:"短距離メニュー",placement:"middle",detail:"120m後に十分休息し、80mでスピードを確認",sets:"1セット",intensity:"90〜95％",rest:"各5分",duration:"40分",target:"短距離",caution:"後半のフォーム維持"},
-  {id:crypto.randomUUID(),name:"ハードル5台走",category:"ハードルメニュー",placement:"middle",detail:"アプローチから5台目までのリズム確認",sets:"5本",intensity:"85〜90％",rest:"5分",duration:"35分",target:"ハードル",caution:"インターバルを崩さない"},
-  {id:crypto.randomUUID(),name:"助走＋踏切練習",category:"跳躍メニュー",placement:"middle",detail:"短助走から踏切位置と姿勢を確認",sets:"8〜10本",intensity:"中",rest:"適宜",duration:"40分",target:"跳躍",caution:"踏切足の状態確認"},
-  {id:crypto.randomUUID(),name:"メディシンボール投げ",category:"投擲メニュー",placement:"middle",detail:"前方・後方・回旋投げ",sets:"各5回×2",intensity:"中",rest:"1分",duration:"25分",target:"投擲",caution:"周囲の安全確認"},
-  {id:crypto.randomUUID(),name:"1000m×5",category:"長距離メニュー",placement:"middle",detail:"一定ペースで反復",sets:"5本",intensity:"設定ペース",rest:"200mジョグ",duration:"50分",target:"長距離",caution:"設定から大きく外れない"},
-  {id:crypto.randomUUID(),name:"体幹サーキット",category:"筋トレメニュー",placement:"both",detail:"プランク、サイドプランク、ヒップリフト",sets:"各30秒×2",intensity:"中",rest:"30秒",duration:"12分",target:"全員",caution:"姿勢を優先"}
-];
+function nav(view){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));el("v-"+view).classList.add("active");document.querySelector(`nav button[data-view="${view}"]`).classList.add("active");scrollTo(0,0)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>nav(b.dataset.view));
 
-let menus = JSON.parse(localStorage.getItem("trackMenus") || "null") || starterMenus;
-let days = JSON.parse(localStorage.getItem("trackDays") || "{}");
-let currentBuilder = blankDay();
-let firebaseReady = false;
-let firestore = null;
-let auth = null;
-let currentUser = null;
-let unsubscribeState = null;
-const TEAM_ID = "athletics-club";
-const STATE_DOC_PATH = `teams/${TEAM_ID}/state/main`;
-let cloudSaveTimer = null;
-
-function blankDay(){
-  const sections = {};
-  SECTIONS.forEach(s => sections[s.id] = []);
-  return {theme:"",notes:"",sections};
+function fillBasics(){
+ const opts=CATS.map(c=>`<option>${c}</option>`).join("");
+ el("category").innerHTML=opts;el("filterCat").innerHTML=`<option value="">すべて</option>${opts}`;
+ el("legend").innerHTML=CATS.map(c=>`<span class="chip ${cls(c)}"><i></i>${c.replace("メニュー","")}</span>`).join("");
 }
 
-function todayISO(){
-  const d = new Date();
-  const tz = new Date(d.getTime() - d.getTimezoneOffset()*60000);
-  return tz.toISOString().slice(0,10);
+function available(section){return menus.filter(m=>m.category===section.cat&&section.places.includes(m.placement))}
+function optionHTML(section){return `<option value="">選択</option>`+available(section).map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join("")}
+
+function renderDaily(){
+ el("dailySections").innerHTML=SECTIONS.map(s=>{
+  const ids=daily.sections[s.id]||[];
+  return `<div class="section ${cls(s.cat)}"><h3>${esc(s.label)}</h3><div class="picker"><select id="pick-${s.id}">${optionHTML(s)}</select><button class="btn primary small" onclick="addDaily('${s.id}')">追加</button></div><div class="items">${ids.length?ids.map((id,i)=>{const m=menus.find(x=>x.id===id);return m?`<div class="item ${cls(m.category)}"><div><b>${esc(m.name)}</b><br><small>${esc([m.sets,m.intensity,m.rest].filter(Boolean).join("／"))}</small></div><button class="btn danger small" onclick="removeDaily('${s.id}',${i})">削除</button></div>`:""}).join(""):`<div class="empty">未設定</div>`}</div></div>`
+ }).join("")
 }
+window.addDaily=id=>{const s=el("pick-"+id);if(s.value){daily.sections[id].push(s.value);renderDaily()}}
+window.removeDaily=(id,i)=>{daily.sections[id].splice(i,1);renderDaily()}
 
-function saveAll(){
-  localStorage.setItem("trackMenus", JSON.stringify(menus));
-  localStorage.setItem("trackDays", JSON.stringify(days));
-  const el = document.getElementById("saveState");
-  el.textContent = firebaseReady && currentUser ? "クラウド保存中…" : "端末に保存しました";
-  renderAll();
+function loadDay(date){daily=days[date]?structuredClone(days[date]):blankDay();el("theme").value=daily.theme||"";el("notes").value=daily.notes||"";renderDaily()}
+el("dailyDate").onchange=e=>loadDay(e.target.value);
 
-  if(firebaseReady && currentUser && firestore){
-    clearTimeout(cloudSaveTimer);
-    cloudSaveTimer = setTimeout(async()=>{
-      try{
-        await firestore.doc(STATE_DOC_PATH).set({
-          menus,
-          days,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedBy: currentUser.email || currentUser.uid
-        }, {merge:true});
-        el.textContent = "クラウド保存済み " + new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
-      }catch(error){
-        console.error(error);
-        el.textContent = "クラウド保存エラー";
-        setDbStatus("保存エラー","offline");
-      }
-    },350);
-  }
+async function saveDayDoc(date,data){
+ data={...structuredClone(data),updatedBy:user?.email||"local",updatedAtText:new Date().toISOString()};
+ days[date]=data;localSave();renderAll();
+ if(cloud){await db.collection("teams").doc(TEAM_ID).collection("days").doc(date).set({...data,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})}
+ markSaved()
 }
+async function deleteDayDoc(date){delete days[date];localSave();renderAll();if(cloud)await db.collection("teams").doc(TEAM_ID).collection("days").doc(date).delete();markSaved("削除済み")}
 
-function esc(v){
-  return String(v ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
-}
-
-function categoryClass(category){
-  return ({
-    "全体メニュー":"cat-overall",
-    "筋トレメニュー":"cat-strength",
-    "短距離メニュー":"cat-sprint",
-    "ハードルメニュー":"cat-hurdle",
-    "跳躍メニュー":"cat-jump",
-    "投擲メニュー":"cat-throw",
-    "長距離メニュー":"cat-distance"
-  })[category] || "";
-}
-
-function sectionCategory(section){
-  return section.accepts?.[0] || "";
-}
-
-function formatDate(dateStr){
-  if(!dateStr) return "";
-  return new Date(dateStr+"T00:00:00").toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
-}
-
-function navTo(view){
-  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
-  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
-  document.getElementById("view-"+view).classList.add("active");
-  document.querySelector(`nav button[data-view="${view}"]`).classList.add("active");
-  window.scrollTo({top:0});
-}
-
-document.querySelectorAll("nav button").forEach(btn=>{
-  btn.addEventListener("click",()=>navTo(btn.dataset.view));
-});
-
-function fillSelects(){
-  const opts = CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join("");
-  document.getElementById("menuCategory").innerHTML = opts;
-  const filter = `<option value="">すべての種類</option>` + opts;
-  document.getElementById("menuCategoryFilter").innerHTML = filter;
-  document.getElementById("builderCategoryFilter").innerHTML = filter;
-}
-
-function menuCard(m, mode="list"){
-  const meta = [m.sets,m.intensity,m.rest,m.duration,m.target].filter(Boolean).map(esc).join("／");
-  let actions = "";
-  if(mode==="list"){
-    actions = `<div class="actions">
-      <button class="btn btn-secondary btn-small" onclick="editMenu('${m.id}')">編集</button>
-      <button class="btn btn-danger btn-small" onclick="removeMenu('${m.id}')">削除</button>
-    </div>`;
-  } else {
-    const suitable = SECTIONS.filter(s=>s.accepts.includes(m.category) && s.placement.includes(m.placement));
-    actions = `<div class="actions">${suitable.map(s=>`<button class="btn btn-primary btn-small" onclick="addToSection('${s.id}','${m.id}')">${esc(s.label)}へ追加</button>`).join("")}</div>`;
-  }
-  const catClass=categoryClass(m.category);
-  return `<div class="menu-card ${catClass}">
-    <div class="menu-card-top">
-      <div>
-        <h4>${esc(m.name)}</h4>
-        <span class="category-chip ${catClass}">${esc(m.category)}</span>
-      </div>
-      ${mode==="list" ? actions : ""}
-    </div>
-    ${m.detail ? `<p>${esc(m.detail)}</p>` : ""}
-    ${meta ? `<div class="menu-meta">${meta}</div>` : ""}
-    ${m.caution ? `<div class="muted">注意：${esc(m.caution)}</div>` : ""}
-    ${mode!=="list" ? actions : ""}
-  </div>`;
-}
-
-function filteredMenus(categoryId,searchId){
-  const cat = document.getElementById(categoryId).value;
-  const q = document.getElementById(searchId).value.toLowerCase();
-  return menus.filter(m => (!cat || m.category===cat) && (!q || `${m.name} ${m.detail} ${m.target}`.toLowerCase().includes(q)));
-}
-
-function renderMenuList(){
-  const list = filteredMenus("menuCategoryFilter","menuSearch");
-  document.getElementById("menuCountLabel").textContent = `${list.length}件`;
-  document.getElementById("menuList").innerHTML = list.length ? list.map(m=>menuCard(m)).join("") : `<div class="empty">該当するメニューがありません</div>`;
-}
-
-function renderBuilderLibrary(){
-  const list = filteredMenus("builderCategoryFilter","builderSearch");
-  document.getElementById("builderMenuLibrary").innerHTML = list.length ? list.map(m=>menuCard(m,"builder")).join("") : `<div class="empty">該当するメニューがありません</div>`;
-}
-
-function renderBuilderSections(){
-  document.getElementById("builderSections").innerHTML = SECTIONS.map(section=>{
-    const ids = currentBuilder.sections[section.id] || [];
-    const availableMenus = menus.filter(m =>
-      section.accepts.includes(m.category) &&
-      section.placement.includes(m.placement)
-    );
-
-    const options = availableMenus.length
-      ? `<option value="">メニューを選択してください</option>` +
-        availableMenus.map(m =>
-          `<option value="${m.id}">${esc(m.name)}${m.sets ? `｜${esc(m.sets)}` : ""}</option>`
-        ).join("")
-      : `<option value="">登録済みメニューがありません</option>`;
-
-    const items = ids.map((id,index)=>{
-      const m = menus.find(x=>x.id===id);
-      if(!m) return "";
-      const itemClass=categoryClass(m.category);
-      return `<div class="selected-item ${itemClass}">
-        <div class="drag">≡</div>
-        <div>
-          <strong>${esc(m.name)}</strong>
-          <small>${esc([m.sets,m.intensity,m.rest].filter(Boolean).join("／"))}</small>
-        </div>
-        <div class="actions">
-          <button class="btn btn-secondary btn-small" onclick="moveItem('${section.id}',${index},-1)">↑</button>
-          <button class="btn btn-secondary btn-small" onclick="moveItem('${section.id}',${index},1)">↓</button>
-          <button class="btn btn-danger btn-small" onclick="removeFromSection('${section.id}',${index})">削除</button>
-        </div>
-      </div>`;
-    }).join("");
-
-    const sectionClass=categoryClass(sectionCategory(section));
-    return `<div class="section-block ${sectionClass}">
-      <div class="section-header">
-        <h3>${esc(section.label)}</h3>
-        <span class="muted">${ids.length}件</span>
-      </div>
-      <div class="section-picker">
-        <select id="picker-${section.id}" ${availableMenus.length ? "" : "disabled"}>
-          ${options}
-        </select>
-        <button class="btn btn-primary" onclick="addSelectedMenu('${section.id}')" ${availableMenus.length ? "" : "disabled"}>
-          追加
-        </button>
-      </div>
-      <div class="selected-list">${items || `<div class="empty">メニュー未設定</div>`}</div>
-    </div>`;
-  }).join("");
-}
-
-window.addSelectedMenu = (sectionId)=>{
-  const select = document.getElementById(`picker-${sectionId}`);
-  if(!select || !select.value) return;
-  currentBuilder.sections[sectionId].push(select.value);
-  renderBuilderSections();
-};
-window.addToSection = (sectionId,menuId)=>{
-  currentBuilder.sections[sectionId].push(menuId);
-  renderBuilderSections();
-};
-
-window.removeFromSection = (sectionId,index)=>{
-  currentBuilder.sections[sectionId].splice(index,1);
-  renderBuilderSections();
-};
-
-window.moveItem = (sectionId,index,dir)=>{
-  const arr = currentBuilder.sections[sectionId];
-  const ni = index+dir;
-  if(ni<0 || ni>=arr.length) return;
-  [arr[index],arr[ni]]=[arr[ni],arr[index]];
-  renderBuilderSections();
-};
-
-function loadBuilderDate(date){
-  const stored = days[date];
-  currentBuilder = stored ? JSON.parse(JSON.stringify(stored)) : blankDay();
-  document.getElementById("dayTheme").value=currentBuilder.theme||"";
-  document.getElementById("dayNotes").value=currentBuilder.notes||"";
-  renderBuilderSections();
-}
-
-document.getElementById("builderDate").addEventListener("change",e=>loadBuilderDate(e.target.value));
-document.getElementById("dayTheme").addEventListener("input",e=>currentBuilder.theme=e.target.value);
-document.getElementById("dayNotes").addEventListener("input",e=>currentBuilder.notes=e.target.value);
-
-document.getElementById("saveDay").addEventListener("click",()=>{
-  const date=document.getElementById("builderDate").value;
-  if(!date) return alert("日付を選択してください");
-  currentBuilder.theme=document.getElementById("dayTheme").value.trim();
-  currentBuilder.notes=document.getElementById("dayNotes").value.trim();
-  days[date]=JSON.parse(JSON.stringify(currentBuilder));
-  saveAll();
-  alert("練習内容を保存しました");
-});
-
-document.getElementById("copyPrevious").addEventListener("click",()=>{
-  const dateStr=document.getElementById("builderDate").value;
-  if(!dateStr) return alert("日付を選択してください");
-  const d=new Date(dateStr+"T00:00:00"); d.setDate(d.getDate()-1);
-  const prev=d.toISOString().slice(0,10);
-  if(!days[prev]) return alert("前日の練習データがありません");
-  currentBuilder=JSON.parse(JSON.stringify(days[prev]));
-  currentBuilder.theme=(currentBuilder.theme ? currentBuilder.theme+"（コピー）":"");
-  document.getElementById("dayTheme").value=currentBuilder.theme;
-  document.getElementById("dayNotes").value=currentBuilder.notes||"";
-  renderBuilderSections();
-});
-
-document.getElementById("deleteDay").addEventListener("click",()=>{
-  const date=document.getElementById("builderDate").value;
-  if(!date || !days[date]) return alert("削除するデータがありません");
-  if(confirm(`${formatDate(date)}の練習を削除しますか？`)){
-    delete days[date];
-    currentBuilder=blankDay();
-    saveAll();
-    loadBuilderDate(date);
-  }
-});
+el("saveDay").onclick=async()=>{const d=el("dailyDate").value;if(!d)return alert("日付を選択してください");daily.theme=el("theme").value.trim();daily.notes=el("notes").value.trim();await saveDayDoc(d,daily);alert("保存しました")}
+el("deleteDay").onclick=async()=>{const d=el("dailyDate").value;if(days[d]&&confirm(fmt(d)+"を削除しますか？")){await deleteDayDoc(d);loadDay(d)}}
+el("copyPrev").onclick=()=>{const d=addDays(el("dailyDate").value,-1);if(!days[d])return alert("前日のデータがありません");daily=structuredClone(days[d]);el("theme").value=(daily.theme||"")+"（コピー）";daily.theme=el("theme").value;el("notes").value=daily.notes||"";renderDaily()}
 
 function dayHTML(date,day){
-  if(!day) return `<div class="empty">${formatDate(date)}の練習は未作成です</div>`;
-  const blocks = SECTIONS.map(s=>{
-    const ids=day.sections?.[s.id]||[];
-    if(!ids.length) return "";
-    const li=ids.map(id=>{
-      const m=menus.find(x=>x.id===id);
-      return m ? `<li><strong>${esc(m.name)}</strong>${m.detail?` — ${esc(m.detail)}`:""}</li>` : "";
-    }).join("");
-    const groupClass=categoryClass(sectionCategory(s));
-    return `<div class="calendar-group ${groupClass}"><b>${esc(s.label)}</b><ul>${li}</ul></div>`;
-  }).join("");
-  return `<div>
-    <h2>${formatDate(date)}</h2>
-    ${day.theme?`<p><strong>テーマ：</strong>${esc(day.theme)}</p>`:""}
-    ${blocks || `<div class="empty">メニュー未設定</div>`}
-    ${day.notes?`<p><strong>連絡事項：</strong>${esc(day.notes)}</p>`:""}
-  </div>`;
+ if(!day)return `<div class="empty">${fmt(date)}は未作成です</div>`;
+ const blocks=SECTIONS.map(s=>{const a=day.sections?.[s.id]||[];if(!a.length)return"";return `<div class="section ${cls(s.cat)}"><h3>${esc(s.label)}</h3><div class="items">${a.map(id=>{const m=menus.find(x=>x.id===id);return m?`<div class="item ${cls(m.category)}"><div><b>${esc(m.name)}</b>${m.detail?`<br><small>${esc(m.detail)}</small>`:""}</div></div>`:""}).join("")}</div></div>`}).join("");
+ return `<h2>${fmt(date)}</h2>${day.theme?`<p><b>テーマ：</b>${esc(day.theme)}</p>`:""}${blocks}${day.notes?`<p><b>連絡：</b>${esc(day.notes)}</p>`:""}<p class="muted">最終更新：${esc(day.updatedBy||"")}</p>`
 }
+function renderToday(){const d=el("todayDate").value;el("todayContent").innerHTML=dayHTML(d,days[d]);const list=Object.keys(days).sort().reverse();el("dayList").innerHTML=list.length?list.map(x=>`<div class="panel">${dayHTML(x,days[x])}<div class="actions no-print"><button class="btn secondary small" onclick="openDay('${x}')">編集</button></div></div>`).join(""):`<div class="empty">まだありません</div>`}
+window.openDay=d=>{el("dailyDate").value=d;loadDay(d);nav("daily")}
+el("editDay").onclick=()=>openDay(el("todayDate").value);el("todayDate").onchange=renderToday;el("printDay").onclick=()=>{el("v-today").classList.add("print");print();setTimeout(()=>el("v-today").classList.remove("print"),300)}
 
-function renderToday(){
-  const date=document.getElementById("todayDate").value;
-  document.getElementById("todayContent").innerHTML=dayHTML(date,days[date]);
-  const sorted=Object.keys(days).sort().reverse();
-  document.getElementById("calendarList").innerHTML=sorted.length ? sorted.map(d=>`<div class="calendar-day">
-    ${dayHTML(d,days[d])}
-    <div class="actions no-print">
-      <button class="btn btn-secondary btn-small" onclick="openDay('${d}')">編集</button>
-      <button class="btn btn-primary btn-small" onclick="showDay('${d}')">表示</button>
-    </div>
-  </div>`).join("") : `<div class="empty">まだ練習日は作成されていません</div>`;
+function renderMenus(){
+ const c=el("filterCat").value,q=el("filterText").value.toLowerCase(),list=menus.filter(m=>(!c||m.category===c)&&(!q||(m.name+" "+m.detail+" "+m.target).toLowerCase().includes(q)));
+ el("menuList").innerHTML=list.length?list.map(m=>`<div class="menu ${cls(m.category)}"><h4>${esc(m.name)}</h4><span class="chip ${cls(m.category)}"><i></i>${esc(m.category)}</span>${m.detail?`<p>${esc(m.detail)}</p>`:""}<div class="meta">${esc([m.sets,m.intensity,m.rest,m.duration,m.target].filter(Boolean).join("／"))}</div><div class="actions"><button class="btn secondary small" onclick="editMenu('${m.id}')">編集</button><button class="btn danger small" onclick="deleteMenu('${m.id}')">削除</button></div></div>`).join(""):`<div class="empty">該当なし</div>`
 }
+el("filterCat").oninput=renderMenus;el("filterText").oninput=renderMenus;
 
-window.openDay=(date)=>{
-  document.getElementById("builderDate").value=date;
-  loadBuilderDate(date);
-  navTo("builder");
-};
-window.showDay=(date)=>{
-  document.getElementById("todayDate").value=date;
-  renderToday();
-  window.scrollTo({top:0});
-};
-
-document.getElementById("todayDate").addEventListener("change",renderToday);
-document.getElementById("editSelectedDay").addEventListener("click",()=>openDay(document.getElementById("todayDate").value));
-document.getElementById("printDay").addEventListener("click",()=>{
-  document.getElementById("view-today").classList.add("print-target");
-  window.print();
-  setTimeout(()=>document.getElementById("view-today").classList.remove("print-target"),300);
-});
-
-function countDayMenus(day){
-  return SECTIONS.reduce((sum,s)=>sum+(day?.sections?.[s.id]?.length||0),0);
+function menuFormData(){
+ return{id:el("editId").value||crypto.randomUUID(),name:el("name").value.trim(),category:el("category").value,placement:el("placement").value,detail:el("detail").value.trim(),sets:el("sets").value.trim(),intensity:el("intensity").value.trim(),rest:el("rest").value.trim(),duration:el("duration").value.trim(),target:el("target").value.trim(),caution:el("caution").value.trim()}
 }
+async function saveMenuDoc(m){const i=menus.findIndex(x=>x.id===m.id);if(i>=0)menus[i]=m;else menus.push(m);localSave();renderAll();if(cloud)await db.collection("teams").doc(TEAM_ID).collection("menus").doc(m.id).set({...m,updatedBy:user.email,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});markSaved()}
+el("saveMenu").onclick=async()=>{const m=menuFormData();if(!m.name)return alert("メニュー名を入力してください");await saveMenuDoc(m);resetMenu();nav("menus")}
+function resetMenu(){["editId","name","detail","sets","intensity","rest","duration","target","caution"].forEach(i=>el(i).value="");el("category").value=CATS[0];el("placement").value="middle";el("formTitle").textContent="メニュー登録"}
+el("resetMenu").onclick=resetMenu;
+window.editMenu=id=>{const m=menus.find(x=>x.id===id);if(!m)return;Object.entries({editId:m.id,name:m.name,category:m.category,placement:m.placement,detail:m.detail,sets:m.sets,intensity:m.intensity,rest:m.rest,duration:m.duration,target:m.target,caution:m.caution}).forEach(([k,v])=>el(k).value=v||"");el("formTitle").textContent="メニュー編集";nav("register")}
+window.deleteMenu=async id=>{const m=menus.find(x=>x.id===id);if(!m||!confirm("削除しますか？"))return;menus=menus.filter(x=>x.id!==id);Object.values(days).forEach(d=>SECTIONS.forEach(s=>d.sections[s.id]=(d.sections[s.id]||[]).filter(x=>x!==id)));localSave();renderAll();if(cloud){await db.collection("teams").doc(TEAM_ID).collection("menus").doc(id).delete();const batch=db.batch();Object.entries(days).forEach(([date,d])=>batch.set(db.collection("teams").doc(TEAM_ID).collection("days").doc(date),d,{merge:true}));await batch.commit()}markSaved("削除済み")}
 
-function renderStats(){
-  document.getElementById("statMenus").textContent=menus.length;
-  document.getElementById("statDays").textContent=Object.keys(days).length;
-  document.getElementById("statToday").textContent=countDayMenus(days[todayISO()]);
+function loadWeek(){weekDraft={};for(let i=0;i<7;i++){const d=addDays(weekStart,i);weekDraft[d]=days[d]?structuredClone(days[d]):blankDay()}}
+function renderWeek(){
+ const dates=Array.from({length:7},(_,i)=>addDays(weekStart,i));el("weekDate").value=weekStart;el("weekTitle").textContent=`${dates[0]} ～ ${dates[6]}`;
+ el("weekHead").innerHTML=`<tr><th>区分</th>${dates.map(d=>`<th>${new Date(d+"T00:00:00").toLocaleDateString("ja-JP",{month:"numeric",day:"numeric",weekday:"short"})}<input value="${esc(weekDraft[d].theme||"")}" placeholder="テーマ" onchange="setWeekTheme('${d}',this.value)" style="margin-top:5px;font-size:12px"></th>`).join("")}</tr>`;
+ el("weekBody").innerHTML=SECTIONS.map(s=>`<tr><th class="${cls(s.cat)}">${esc(s.label)}</th>${dates.map(d=>{const ids=weekDraft[d].sections[s.id]||[];return `<td><div class="weekcell ${cls(s.cat)}"><div class="picker"><select id="w-${d}-${s.id}">${optionHTML(s)}</select><button class="btn primary small" onclick="addWeek('${d}','${s.id}')">追加</button></div>${ids.map((id,i)=>{const m=menus.find(x=>x.id===id);return m?`<div class="weekitem ${cls(m.category)}"><span>${esc(m.name)}</span><button class="x" onclick="removeWeek('${d}','${s.id}',${i})">×</button></div>`:""}).join("")}</div></td>`}).join("")}</tr>`).join("")
 }
+window.addWeek=(d,s)=>{const p=el(`w-${d}-${s}`);if(p.value){weekDraft[d].sections[s].push(p.value);renderWeek()}}
+window.removeWeek=(d,s,i)=>{weekDraft[d].sections[s].splice(i,1);renderWeek()}
+window.setWeekTheme=(d,v)=>weekDraft[d].theme=v;
+function shiftWeek(n){weekStart=addDays(weekStart,n*7);loadWeek();renderWeek()}
+el("prevWeek").onclick=()=>shiftWeek(-1);el("nextWeek").onclick=()=>shiftWeek(1);el("thisWeek").onclick=()=>{weekStart=getMonday(todayISO());loadWeek();renderWeek()};el("weekDate").onchange=e=>{weekStart=getMonday(e.target.value);loadWeek();renderWeek()}
+el("saveWeek").onclick=async()=>{if(cloud){const batch=db.batch();for(const [date,d] of Object.entries(weekDraft)){d.updatedBy=user.email;d.updatedAtText=new Date().toISOString();days[date]=structuredClone(d);batch.set(db.collection("teams").doc(TEAM_ID).collection("days").doc(date),{...d,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})}await batch.commit()}else Object.assign(days,structuredClone(weekDraft));localSave();renderAll();markSaved();alert("1週間を保存しました")}
 
-document.getElementById("saveMenu").addEventListener("click",()=>{
-  const id=document.getElementById("editMenuId").value;
-  const name=document.getElementById("menuName").value.trim();
-  if(!name) return alert("メニュー名を入力してください");
-  const item={
-    id:id||crypto.randomUUID(),
-    name,
-    category:document.getElementById("menuCategory").value,
-    placement:document.getElementById("menuPlacement").value,
-    detail:document.getElementById("menuDetail").value.trim(),
-    sets:document.getElementById("menuSets").value.trim(),
-    intensity:document.getElementById("menuIntensity").value.trim(),
-    rest:document.getElementById("menuRest").value.trim(),
-    duration:document.getElementById("menuDuration").value.trim(),
-    target:document.getElementById("menuTarget").value.trim(),
-    caution:document.getElementById("menuCaution").value.trim()
-  };
-  if(id){
-    const i=menus.findIndex(m=>m.id===id);
-    if(i>=0) menus[i]=item;
-  }else{
-    menus.push(item);
-  }
-  saveAll();
-  resetMenuForm();
-  navTo("menus");
-});
-
-function resetMenuForm(){
-  ["editMenuId","menuName","menuDetail","menuSets","menuIntensity","menuRest","menuDuration","menuTarget","menuCaution"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("menuCategory").value=CATEGORIES[0];
-  document.getElementById("menuPlacement").value="middle";
-  document.getElementById("registerTitle").textContent="メニュー登録";
+function renderAll(){renderMenus();renderDaily();renderToday();renderWeek()}
+function configured(){return window.FIREBASE_CONFIG?.apiKey&&!String(window.FIREBASE_CONFIG.apiKey).includes("ここに")}
+function startRealtime(){
+ if(unsubMenus)unsubMenus();if(unsubDays)unsubDays();
+ unsubMenus=db.collection("teams").doc(TEAM_ID).collection("menus").onSnapshot(s=>{menus=s.docs.map(d=>({id:d.id,...d.data()}));localSave();renderAll()},e=>setStatus("メニュー読込エラー","offline"));
+ unsubDays=db.collection("teams").doc(TEAM_ID).collection("days").onSnapshot(s=>{days={};s.docs.forEach(d=>days[d.id]=d.data());localSave();loadDay(el("dailyDate").value);loadWeek();renderAll()},e=>setStatus("練習読込エラー","offline"));
 }
-document.getElementById("resetMenuForm").addEventListener("click",resetMenuForm);
-
-window.editMenu=(id)=>{
-  const m=menus.find(x=>x.id===id);
-  if(!m) return;
-  document.getElementById("editMenuId").value=m.id;
-  document.getElementById("menuName").value=m.name;
-  document.getElementById("menuCategory").value=m.category;
-  document.getElementById("menuPlacement").value=m.placement;
-  document.getElementById("menuDetail").value=m.detail||"";
-  document.getElementById("menuSets").value=m.sets||"";
-  document.getElementById("menuIntensity").value=m.intensity||"";
-  document.getElementById("menuRest").value=m.rest||"";
-  document.getElementById("menuDuration").value=m.duration||"";
-  document.getElementById("menuTarget").value=m.target||"";
-  document.getElementById("menuCaution").value=m.caution||"";
-  document.getElementById("registerTitle").textContent="メニュー編集";
-  navTo("register");
-};
-
-window.removeMenu=(id)=>{
-  const m=menus.find(x=>x.id===id);
-  if(!m) return;
-  if(confirm(`「${m.name}」を削除しますか？`)){
-    menus=menus.filter(x=>x.id!==id);
-    Object.values(days).forEach(day=>{
-      SECTIONS.forEach(s=>{
-        day.sections[s.id]=(day.sections[s.id]||[]).filter(mid=>mid!==id);
-      });
-    });
-    saveAll();
-  }
-};
-
-["menuCategoryFilter","menuSearch"].forEach(id=>document.getElementById(id).addEventListener("input",renderMenuList));
-["builderCategoryFilter","builderSearch"].forEach(id=>document.getElementById(id).addEventListener("input",renderBuilderLibrary));
-
-function renderAll(){
-  renderMenuList();
-  renderBuilderLibrary();
-  renderBuilderSections();
-  renderToday();
-  renderStats();
+async function init(){
+ menus=JSON.parse(localStorage.getItem("coachMenus")||"[]");days=JSON.parse(localStorage.getItem("coachDays")||"{}");
+ fillBasics();el("todayDate").value=todayISO();el("dailyDate").value=todayISO();el("weekDate").value=weekStart;loadDay(todayISO());loadWeek();renderAll();
+ if(!configured()){setStatus("未接続・端末保存","offline");return}
+ try{
+  firebase.initializeApp(window.FIREBASE_CONFIG);auth=firebase.auth();db=firebase.firestore();cloud=true;
+  auth.onAuthStateChanged(u=>{user=u;if(u){el("login").classList.add("hidden");el("logout").style.display="";setStatus("リアルタイム接続","online");el("savestatus").textContent=u.email;startRealtime()}else{el("login").classList.remove("hidden");el("logout").style.display="none";setStatus("ログイン待ち","")}})
+ }catch(e){console.error(e);setStatus("接続エラー","offline")}
 }
-
-function setDbStatus(text,state=""){
-  document.getElementById("dbStatus").textContent=text;
-  const dot=document.getElementById("dbDot");
-  dot.className="db-dot"+(state?` ${state}`:"");
-}
-
-function isFirebaseConfigured(){
-  return window.FIREBASE_CONFIG &&
-    window.FIREBASE_CONFIG.apiKey &&
-    !String(window.FIREBASE_CONFIG.apiKey).includes("ここに");
-}
-
-async function initializeCloud(){
-  if(!isFirebaseConfigured()){
-    firebaseReady=false;
-    setDbStatus("未接続・端末保存","offline");
-    document.getElementById("saveState").textContent="端末内に自動保存";
-    return;
-  }
-
-  try{
-    firebase.initializeApp(window.FIREBASE_CONFIG);
-    auth=firebase.auth();
-    firestore=firebase.firestore();
-    firebaseReady=true;
-    setDbStatus("ログイン待ち");
-
-    auth.onAuthStateChanged(user=>{
-      currentUser=user;
-      const overlay=document.getElementById("loginOverlay");
-      const logout=document.getElementById("logoutButton");
-
-      if(user){
-        overlay.classList.add("hidden");
-        logout.style.display="";
-        setDbStatus("クラウド接続","online");
-        document.getElementById("saveState").textContent=user.email || "ログイン済み";
-        startStateListener();
-      }else{
-        if(unsubscribeState){unsubscribeState();unsubscribeState=null;}
-        overlay.classList.remove("hidden");
-        logout.style.display="none";
-        setDbStatus("ログイン待ち");
-      }
-    });
-  }catch(error){
-    console.error(error);
-    firebaseReady=false;
-    setDbStatus("接続エラー","offline");
-    document.getElementById("saveState").textContent="端末保存で動作中";
-  }
-}
-
-function startStateListener(){
-  if(!firestore || !currentUser) return;
-  if(unsubscribeState) unsubscribeState();
-
-  unsubscribeState=firestore.doc(STATE_DOC_PATH).onSnapshot(async snap=>{
-    if(snap.exists){
-      const data=snap.data();
-      menus=Array.isArray(data.menus) ? data.menus : starterMenus;
-      days=data.days && typeof data.days==="object" ? data.days : {};
-      localStorage.setItem("trackMenus",JSON.stringify(menus));
-      localStorage.setItem("trackDays",JSON.stringify(days));
-      loadBuilderDate(document.getElementById("builderDate").value);
-      renderAll();
-    }else{
-      await firestore.doc(STATE_DOC_PATH).set({
-        menus,
-        days,
-        createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy:currentUser.email || currentUser.uid
-      });
-    }
-  },error=>{
-    console.error(error);
-    setDbStatus("読込エラー","offline");
-  });
-}
-
-async function signIn(){
-  const email=document.getElementById("loginEmail").value.trim();
-  const password=document.getElementById("loginPassword").value;
-  const msg=document.getElementById("loginMessage");
-  if(!email || !password){msg.textContent="メールアドレスとパスワードを入力してください。";return;}
-  try{
-    msg.textContent="ログイン中…";
-    await auth.signInWithEmailAndPassword(email,password);
-    msg.textContent="";
-  }catch(error){
-    msg.textContent="ログインできませんでした。入力内容またはFirebase設定を確認してください。";
-  }
-}
-
-async function registerAccount(){
-  const email=document.getElementById("loginEmail").value.trim();
-  const password=document.getElementById("loginPassword").value;
-  const msg=document.getElementById("loginMessage");
-  if(!email || password.length<6){msg.textContent="メールアドレスと6文字以上のパスワードを入力してください。";return;}
-  try{
-    msg.textContent="アカウント作成中…";
-    await auth.createUserWithEmailAndPassword(email,password);
-    msg.textContent="";
-  }catch(error){
-    msg.textContent="アカウントを作成できませんでした。既存アカウントや設定を確認してください。";
-  }
-}
-
-document.getElementById("loginButton").addEventListener("click",signIn);
-document.getElementById("registerAccountButton").addEventListener("click",registerAccount);
-document.getElementById("logoutButton").addEventListener("click",()=>auth?.signOut());
-
-
-function updateCategorySelectColor(){
-  const select=document.getElementById("menuCategory");
-  const cls=categoryClass(select.value);
-  select.className=cls;
-  select.style.borderLeft=`8px solid ${getComputedStyle(document.documentElement).getPropertyValue(
-    ({
-      "cat-overall":"--cat-overall","cat-strength":"--cat-strength","cat-sprint":"--cat-sprint",
-      "cat-hurdle":"--cat-hurdle","cat-jump":"--cat-jump","cat-throw":"--cat-throw",
-      "cat-distance":"--cat-distance"
-    })[cls]
-  ).trim()}`;
-}
-document.getElementById("menuCategory").addEventListener("change",updateCategorySelectColor);
-
-fillSelects();
-document.getElementById("todayDate").value=todayISO();
-document.getElementById("builderDate").value=todayISO();
-loadBuilderDate(todayISO());
-renderAll();
-updateCategorySelectColor();
-initializeCloud();
+el("loginBtn").onclick=async()=>{try{el("loginMsg").textContent="ログイン中";await auth.signInWithEmailAndPassword(el("email").value.trim(),el("password").value);el("loginMsg").textContent=""}catch(e){el("loginMsg").textContent="ログインできませんでした"}}
+el("registerBtn").onclick=async()=>{try{if(el("password").value.length<6)return el("loginMsg").textContent="パスワードは6文字以上です";await auth.createUserWithEmailAndPassword(el("email").value.trim(),el("password").value)}catch(e){el("loginMsg").textContent="アカウントを作成できませんでした"}}
+el("logout").onclick=()=>auth.signOut();
+init();
 </script>
 </body>
 </html>

@@ -1,12 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ログイン済みのコーチだけが共有データを閲覧・編集できます。
-    match /teams/{teamId}/state/{documentId} {
-      allow read, write: if request.auth != null;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // その他のデータは拒否します。
+    match /teams/{teamId}/menus/{menuId} {
+      allow read, create, update, delete: if signedIn();
+    }
+
+    match /teams/{teamId}/days/{dateId} {
+      allow read, create, update, delete: if signedIn();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
