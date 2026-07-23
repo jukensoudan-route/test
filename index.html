@@ -708,7 +708,7 @@ function menuCard(m, mode="list"){
     actions = `<div class="actions">${suitable.map(s=>`<button class="btn btn-primary btn-small" onclick="addToSection('${s.id}','${m.id}')">${esc(s.label)}へ追加</button>`).join("")}</div>`;
   }
   const catClass=categoryClass(m.category);
-  return `<div class="menu-card ${catClass}">`
+  return `<div class="menu-card ${catClass}">
     <div class="menu-card-top">
       <div>
         <h4>${esc(m.name)}</h4>
