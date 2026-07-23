@@ -245,6 +245,25 @@
       border-bottom:1px solid var(--line);
     }
     .section-header h3{margin:0;font-size:16px}
+
+    .section-picker{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px;
+      padding:10px;
+      border-bottom:1px solid var(--line);
+      background:#fff;
+    }
+    .section-picker select{
+      min-width:0;
+      border-left:6px solid var(--cat-color);
+      background:var(--cat-soft);
+      font-weight:700;
+    }
+    .section-picker .btn{
+      white-space:nowrap;
+    }
+
     .selected-list{padding:10px;min-height:70px}
     .selected-item{
       display:grid;
@@ -428,7 +447,7 @@
 
   <section id="view-builder" class="view">
     <div class="notice">
-      前半に「全体メニュー・筋トレ」、中央に各種目、後半に「筋トレ・全体メニュー」を配置できます。
+      各欄のプルダウンからメニューを選択し、「追加」を押してください。複数のメニューを順番に登録できます。
     </div>
     <div class="color-legend">
           <span class="legend-item cat-overall"><span class="legend-dot"></span>全体</span>
@@ -465,7 +484,7 @@
       <div>
         <div id="builderSections"></div>
 
-        <div class="panel no-print" id="menuLibraryPanel">
+        <div class="panel no-print" id="menuLibraryPanel" style="display:none">
           <div class="panel-title"><h2>一覧から追加</h2></div>
           <div class="filters">
             <select id="builderCategoryFilter"></select>
@@ -743,13 +762,28 @@ function renderBuilderLibrary(){
 function renderBuilderSections(){
   document.getElementById("builderSections").innerHTML = SECTIONS.map(section=>{
     const ids = currentBuilder.sections[section.id] || [];
+    const availableMenus = menus.filter(m =>
+      section.accepts.includes(m.category) &&
+      section.placement.includes(m.placement)
+    );
+
+    const options = availableMenus.length
+      ? `<option value="">メニューを選択してください</option>` +
+        availableMenus.map(m =>
+          `<option value="${m.id}">${esc(m.name)}${m.sets ? `｜${esc(m.sets)}` : ""}</option>`
+        ).join("")
+      : `<option value="">登録済みメニューがありません</option>`;
+
     const items = ids.map((id,index)=>{
       const m = menus.find(x=>x.id===id);
       if(!m) return "";
       const itemClass=categoryClass(m.category);
       return `<div class="selected-item ${itemClass}">
         <div class="drag">≡</div>
-        <div><strong>${esc(m.name)}</strong><small>${esc([m.sets,m.intensity,m.rest].filter(Boolean).join("／"))}</small></div>
+        <div>
+          <strong>${esc(m.name)}</strong>
+          <small>${esc([m.sets,m.intensity,m.rest].filter(Boolean).join("／"))}</small>
+        </div>
         <div class="actions">
           <button class="btn btn-secondary btn-small" onclick="moveItem('${section.id}',${index},-1)">↑</button>
           <button class="btn btn-secondary btn-small" onclick="moveItem('${section.id}',${index},1)">↓</button>
@@ -757,17 +791,32 @@ function renderBuilderSections(){
         </div>
       </div>`;
     }).join("");
+
     const sectionClass=categoryClass(sectionCategory(section));
     return `<div class="section-block ${sectionClass}">
       <div class="section-header">
         <h3>${esc(section.label)}</h3>
         <span class="muted">${ids.length}件</span>
       </div>
+      <div class="section-picker">
+        <select id="picker-${section.id}" ${availableMenus.length ? "" : "disabled"}>
+          ${options}
+        </select>
+        <button class="btn btn-primary" onclick="addSelectedMenu('${section.id}')" ${availableMenus.length ? "" : "disabled"}>
+          追加
+        </button>
+      </div>
       <div class="selected-list">${items || `<div class="empty">メニュー未設定</div>`}</div>
     </div>`;
   }).join("");
 }
 
+window.addSelectedMenu = (sectionId)=>{
+  const select = document.getElementById(`picker-${sectionId}`);
+  if(!select || !select.value) return;
+  currentBuilder.sections[sectionId].push(select.value);
+  renderBuilderSections();
+};
 window.addToSection = (sectionId,menuId)=>{
   currentBuilder.sections[sectionId].push(menuId);
   renderBuilderSections();
