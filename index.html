@@ -119,6 +119,78 @@
     .btn-danger{background:#fff0f0;color:var(--danger);border:1px solid #ffd0d0}
     .btn-small{padding:7px 10px;font-size:12px}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    :root{
+      --cat-overall:#2563eb;
+      --cat-strength:#16a34a;
+      --cat-sprint:#ef4444;
+      --cat-hurdle:#f97316;
+      --cat-jump:#8b5cf6;
+      --cat-throw:#a16207;
+      --cat-distance:#0891b2;
+    }
+    .cat-overall{--cat-color:var(--cat-overall);--cat-soft:#dbeafe}
+    .cat-strength{--cat-color:var(--cat-strength);--cat-soft:#dcfce7}
+    .cat-sprint{--cat-color:var(--cat-sprint);--cat-soft:#fee2e2}
+    .cat-hurdle{--cat-color:var(--cat-hurdle);--cat-soft:#ffedd5}
+    .cat-jump{--cat-color:var(--cat-jump);--cat-soft:#ede9fe}
+    .cat-throw{--cat-color:var(--cat-throw);--cat-soft:#fef3c7}
+    .cat-distance{--cat-color:var(--cat-distance);--cat-soft:#cffafe}
+
+    .category-chip[class*="cat-"]{
+      background:var(--cat-soft);
+      color:var(--cat-color);
+      border:1px solid color-mix(in srgb,var(--cat-color) 28%, white);
+    }
+    .menu-card[class*="cat-"]{
+      border-left:7px solid var(--cat-color);
+      background:linear-gradient(90deg,var(--cat-soft),#fff 30%);
+    }
+    .section-block[class*="cat-"]{
+      border:2px solid color-mix(in srgb,var(--cat-color) 28%, white);
+    }
+    .section-block[class*="cat-"] .section-header{
+      background:var(--cat-soft);
+      border-bottom-color:color-mix(in srgb,var(--cat-color) 25%, white);
+    }
+    .section-block[class*="cat-"] .section-header h3{
+      color:var(--cat-color);
+    }
+    .selected-item[class*="cat-"]{
+      border-left:6px solid var(--cat-color);
+      background:linear-gradient(90deg,var(--cat-soft),#fff 35%);
+    }
+    .calendar-group[class*="cat-"]{
+      border-left:6px solid var(--cat-color);
+      background:var(--cat-soft);
+      border-radius:9px;
+      padding:9px 11px;
+    }
+    .calendar-group[class*="cat-"] b{
+      color:var(--cat-color);
+    }
+    .color-legend{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin:0 0 14px;
+    }
+    .legend-item{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 9px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      background:var(--cat-soft);
+      color:var(--cat-color);
+      border:1px solid color-mix(in srgb,var(--cat-color) 25%, white);
+    }
+    .legend-dot{
+      width:10px;height:10px;border-radius:50%;background:var(--cat-color);
+    }
+
     .category-chip{
       display:inline-flex;
       align-items:center;
@@ -358,6 +430,15 @@
     <div class="notice">
       前半に「全体メニュー・筋トレ」、中央に各種目、後半に「筋トレ・全体メニュー」を配置できます。
     </div>
+    <div class="color-legend">
+          <span class="legend-item cat-overall"><span class="legend-dot"></span>全体</span>
+          <span class="legend-item cat-strength"><span class="legend-dot"></span>筋トレ</span>
+          <span class="legend-item cat-sprint"><span class="legend-dot"></span>短距離</span>
+          <span class="legend-item cat-hurdle"><span class="legend-dot"></span>ハードル</span>
+          <span class="legend-item cat-jump"><span class="legend-dot"></span>跳躍</span>
+          <span class="legend-item cat-throw"><span class="legend-dot"></span>投擲</span>
+          <span class="legend-item cat-distance"><span class="legend-dot"></span>長距離</span>
+        </div>
 
     <div class="day-builder">
       <aside id="builderSide" class="panel sticky-side no-print">
@@ -402,6 +483,15 @@
         <h2>メニュー一覧</h2>
         <span class="muted" id="menuCountLabel"></span>
       </div>
+<div class="color-legend">
+          <span class="legend-item cat-overall"><span class="legend-dot"></span>全体</span>
+          <span class="legend-item cat-strength"><span class="legend-dot"></span>筋トレ</span>
+          <span class="legend-item cat-sprint"><span class="legend-dot"></span>短距離</span>
+          <span class="legend-item cat-hurdle"><span class="legend-dot"></span>ハードル</span>
+          <span class="legend-item cat-jump"><span class="legend-dot"></span>跳躍</span>
+          <span class="legend-item cat-throw"><span class="legend-dot"></span>投擲</span>
+          <span class="legend-item cat-distance"><span class="legend-dot"></span>長距離</span>
+        </div>
       <div class="filters no-print">
         <select id="menuCategoryFilter"></select>
         <input id="menuSearch" placeholder="メニュー名・内容で検索">
@@ -564,6 +654,22 @@ function esc(v){
   return String(v ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
 }
 
+function categoryClass(category){
+  return ({
+    "全体メニュー":"cat-overall",
+    "筋トレメニュー":"cat-strength",
+    "短距離メニュー":"cat-sprint",
+    "ハードルメニュー":"cat-hurdle",
+    "跳躍メニュー":"cat-jump",
+    "投擲メニュー":"cat-throw",
+    "長距離メニュー":"cat-distance"
+  })[category] || "";
+}
+
+function sectionCategory(section){
+  return section.accepts?.[0] || "";
+}
+
 function formatDate(dateStr){
   if(!dateStr) return "";
   return new Date(dateStr+"T00:00:00").toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
@@ -601,11 +707,12 @@ function menuCard(m, mode="list"){
     const suitable = SECTIONS.filter(s=>s.accepts.includes(m.category) && s.placement.includes(m.placement));
     actions = `<div class="actions">${suitable.map(s=>`<button class="btn btn-primary btn-small" onclick="addToSection('${s.id}','${m.id}')">${esc(s.label)}へ追加</button>`).join("")}</div>`;
   }
-  return `<div class="menu-card">
+  const catClass=categoryClass(m.category);
+  return `<div class="menu-card ${catClass}">`
     <div class="menu-card-top">
       <div>
         <h4>${esc(m.name)}</h4>
-        <span class="category-chip">${esc(m.category)}</span>
+        <span class="category-chip ${catClass}">${esc(m.category)}</span>
       </div>
       ${mode==="list" ? actions : ""}
     </div>
@@ -639,7 +746,8 @@ function renderBuilderSections(){
     const items = ids.map((id,index)=>{
       const m = menus.find(x=>x.id===id);
       if(!m) return "";
-      return `<div class="selected-item">
+      const itemClass=categoryClass(m.category);
+      return `<div class="selected-item ${itemClass}">
         <div class="drag">≡</div>
         <div><strong>${esc(m.name)}</strong><small>${esc([m.sets,m.intensity,m.rest].filter(Boolean).join("／"))}</small></div>
         <div class="actions">
@@ -649,7 +757,8 @@ function renderBuilderSections(){
         </div>
       </div>`;
     }).join("");
-    return `<div class="section-block">
+    const sectionClass=categoryClass(sectionCategory(section));
+    return `<div class="section-block ${sectionClass}">
       <div class="section-header">
         <h3>${esc(section.label)}</h3>
         <span class="muted">${ids.length}件</span>
@@ -732,7 +841,8 @@ function dayHTML(date,day){
       const m=menus.find(x=>x.id===id);
       return m ? `<li><strong>${esc(m.name)}</strong>${m.detail?` — ${esc(m.detail)}`:""}</li>` : "";
     }).join("");
-    return `<div class="calendar-group"><b>${esc(s.label)}</b><ul>${li}</ul></div>`;
+    const groupClass=categoryClass(sectionCategory(s));
+    return `<div class="calendar-group ${groupClass}"><b>${esc(s.label)}</b><ul>${li}</ul></div>`;
   }).join("");
   return `<div>
     <h2>${formatDate(date)}</h2>
@@ -975,11 +1085,27 @@ document.getElementById("loginButton").addEventListener("click",signIn);
 document.getElementById("registerAccountButton").addEventListener("click",registerAccount);
 document.getElementById("logoutButton").addEventListener("click",()=>auth?.signOut());
 
+
+function updateCategorySelectColor(){
+  const select=document.getElementById("menuCategory");
+  const cls=categoryClass(select.value);
+  select.className=cls;
+  select.style.borderLeft=`8px solid ${getComputedStyle(document.documentElement).getPropertyValue(
+    ({
+      "cat-overall":"--cat-overall","cat-strength":"--cat-strength","cat-sprint":"--cat-sprint",
+      "cat-hurdle":"--cat-hurdle","cat-jump":"--cat-jump","cat-throw":"--cat-throw",
+      "cat-distance":"--cat-distance"
+    })[cls]
+  ).trim()}`;
+}
+document.getElementById("menuCategory").addEventListener("change",updateCategorySelectColor);
+
 fillSelects();
 document.getElementById("todayDate").value=todayISO();
 document.getElementById("builderDate").value=todayISO();
 loadBuilderDate(todayISO());
 renderAll();
+updateCategorySelectColor();
 initializeCloud();
 </script>
 </body>
