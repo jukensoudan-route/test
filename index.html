@@ -1,2155 +1,986 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>家族カレンダー</title>
-<style>
-  :root {
-    --blue: #2491d6;
-    --blue-light: #2ea0e8;
-    --teal: #1ac6b2;
-    --teal-light: #26d4bd;
-    --navy: #16323e;
-    --slate: #5a7480;
-    --line: #dde5e8;
-    --line-soft: #c7d3d8;
-    --border: #cfd9dd;
-    --bg: #f4f6f7;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", "Yu Gothic", sans-serif;
-    color: #1e2b33;
-    padding: 24px 12px 60px;
-    display: flex;
-    justify-content: center;
-  }
-  .sheet {
-    width: 100%;
-    max-width: 620px;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 24px rgba(22,50,62,0.10);
-    padding: 22px 22px 20px;
-  }
-
-  /* Header */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .title {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    color: var(--navy);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .title .sub {
-    display: block;
-    font-size: 11px;
-    font-weight: 400;
-    color: var(--slate);
-    letter-spacing: 1px;
-    margin-top: 3px;
-  }
-  .datebox {
-    display: flex;
-    gap: 8px;
-  }
-  .datebox .field {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #f4fbfd;
-    border: 1px solid #d7e6ea;
-    border-radius: 6px;
-    padding: 5px 12px;
-  }
-  .datebox .field span.label {
-    font-size: 9px;
-    color: #8a9ba3;
-    letter-spacing: 0.5px;
-    margin-bottom: 3px;
-  }
-  .datebox input {
-    border: none;
-    background: transparent;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--navy);
-    text-align: center;
-    font-family: inherit;
-  }
-  .datebox input:focus { outline: none; }
-  .datebox .range-inputs {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .datebox .range-inputs input[type="date"] {
-    width: 108px;
-  }
-  .datebox .range-sep {
-    color: var(--slate);
-    font-weight: 700;
-  }
-  .datebox .start-date {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--navy);
-    min-width: 96px;
-    text-align: center;
-  }
-
-  .accent-bar {
-    height: 5px;
-    border-radius: 4px;
-    background: linear-gradient(90deg, var(--blue) 0%, var(--teal) 100%);
-    margin-bottom: 14px;
-  }
-  .tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 14px;
-  }
-  .tab-btn {
-    flex: 1;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 8px 0;
-    border: 1px solid var(--border);
-    background: #f4f6f7;
-    color: var(--slate);
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .tab-btn.active {
-    background: linear-gradient(135deg, var(--blue), var(--teal));
-    color: #fff;
-    border: none;
-  }
-  .calendar-link {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 8px 4px;
-    border: 1px solid var(--border);
-    background: #fff8dd;
-    color: #7a651a;
-    border-radius: 6px;
-    text-decoration: none;
-  }
-  .calendar-link:hover { background: #fff1b8; }
-  .page { display: none; }
-  .page.active { display: block; }
-
-  /* Content row */
-  .content-row {
-    display: flex;
-    gap: 10px;
-    align-items: stretch;
-    margin-bottom: 14px;
-  }
-  .planner-table {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(22,50,62,0.06);
-  }
-  .table-header { display: flex; border-bottom: 1px solid var(--border); }
-  .col-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 1px;
-    padding: 8px 0;
-  }
-  .col-header.date { width: 52px; flex-shrink: 0; background: linear-gradient(160deg, var(--blue-light), var(--blue)); }
-  .col-header.schedule { flex: 1; background: linear-gradient(160deg, var(--blue-light), var(--blue)); border-left: 1px solid rgba(255,255,255,0.35); }
-  .col-header.todo { width: 128px; flex-shrink: 0; background: linear-gradient(160deg, var(--teal-light), var(--teal)); font-size: 10px; border-left: 1px solid #fff; }
-
-  .table-body { display: flex; flex: 1; }
-  .day-column { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); min-width: 0; }
-  .day-todo-column { width: 128px; flex-shrink: 0; display: flex; flex-direction: column; }
-
-  .day-row { display: flex; border-bottom: 1px solid var(--line); }
-  .day-row:last-child { border-bottom: none; }
-  .day-row:nth-child(odd) { background: #f7fbfd; }
-  .day-label {
-    width: 52px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-right: 1px solid var(--line);
-    padding: 6px 2px;
-  }
-  .day-label .date-num { font-size: 15px; font-weight: 700; color: #1e2b33; line-height: 1; }
-  .day-label.sat .date-num { color: var(--blue); }
-  .day-label.sun .date-num { color: #e0574a; }
-  .day-label .dow-jp { font-size: 10px; color: var(--slate); font-weight: 700; margin-top: 3px; }
-
-  .day-content {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .day-content textarea {
-    border: none;
-    resize: none;
-    font-family: inherit;
-    font-size: 12px;
-    color: #1e2b33;
-    padding: 5px 8px 0;
-    background: repeating-linear-gradient(to bottom, transparent, transparent 23px, var(--line-soft) 23px, calc(23px + 1px));
-    line-height: 24px;
-    min-height: 101px;
-    height: 101px;
-    width: 100%;
-    overflow: hidden;
-    box-sizing: border-box;
-  }
-  .day-content textarea:focus { outline: none; background-color: #fbfeff; }
-
-  .day-todo-cell {
-    display: flex;
-    flex-direction: column;
-    padding: 5px 6px 0;
-    border-bottom: 1px solid var(--line);
-    min-height: 101px;
-    box-sizing: border-box;
-  }
-  .day-todo-cell:last-child { border-bottom: none; }
-  .day-row:nth-child(odd) .day-todo-cell { background: #f7fbfd; }
-  .mini-check {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    height: 24px;
-    line-height: 24px;
-  }
-  .mini-check input[type="checkbox"] {
-    width: 13px; height: 13px; accent-color: var(--teal); flex-shrink: 0; margin: 0; cursor: pointer;
-  }
-  .mini-check .mini-text {
-    flex: 1; min-width: 0; border: none; border-bottom: 1px dotted var(--line-soft);
-    font-family: inherit; font-size: 10px; color: #1e2b33; background: transparent; padding: 0 2px;
-  }
-  .mini-check .mini-text:focus { outline: none; background: #fbfeff; }
-  .mini-check .mini-pick {
-    width: 20px;
-    height: 18px;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: #f4fbfd;
-    color: transparent;
-    text-shadow: none;
-    text-indent: -9999px;
-    font-family: inherit;
-    font-size: 0;
-    cursor: pointer;
-    padding: 0;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, var(--slate) 50%),
-                      linear-gradient(135deg, var(--slate) 50%, transparent 50%);
-    background-position: calc(50% - 2px) 8px, calc(50% + 2px) 8px;
-    background-size: 4px 4px, 4px 4px;
-    background-repeat: no-repeat;
-  }
-  .mini-check .mini-pick option {
-    color: #1e2b33;
-    font-size: 12px;
-    text-indent: 0;
-  }
-  .mini-check .mini-pick:focus { outline: none; border-color: var(--teal); }
-  .mini-check .mini-pick:hover { background-color: #e8f7fb; }
-  .mini-check input[type="checkbox"]:checked ~ .mini-text { color: #9db2ba; text-decoration: line-through; }
-
-
-  .event-lines{display:flex;flex-direction:column;gap:3px;padding:4px 6px;min-height:101px}
-  .event-line{display:flex;align-items:center;gap:5px;min-height:21px}
-  .event-color{display:none}
-  .color-picker{position:relative;flex:0 0 auto}
-  .color-tile{width:26px;height:26px;border:1px solid rgba(0,0,0,.16);border-radius:6px;padding:0;cursor:pointer;display:block}
-  .color-tile[data-color="white"],.color-choice[data-color="white"]{background:#ffffff;border:1px solid #bfc7cf}
-.color-tile[data-color="blue"],.color-choice[data-color="blue"]{background:#2491d6}
-  .color-tile[data-color="red"],.color-choice[data-color="red"]{background:#e0574a}
-  .color-tile[data-color="green"],.color-choice[data-color="green"]{background:#1ac6b2}
-  .color-tile[data-color="pink"],.color-choice[data-color="pink"]{background:#e97fa8}
-  .color-palette{display:none;position:absolute;left:0;top:31px;z-index:50;background:#fff;border:1px solid #cfd9dd;border-radius:8px;padding:5px;gap:5px;box-shadow:0 5px 16px rgba(0,0,0,.18)}
-  .color-picker.open .color-palette{display:flex}
-  .color-choice{width:25px;height:25px;border:1px solid rgba(0,0,0,.14);border-radius:5px;padding:0;cursor:pointer}
-  .color-choice.selected{outline:2px solid #263238;outline-offset:1px}
-
-  .event-text{flex:1;min-width:0;border:none;border-bottom:1px dotted var(--line-soft);font:11px inherit;padding:3px 4px;background:transparent}
-  .event-text:focus{outline:none;background:#fbfeff}
-  
-  
-  
-  
-
-  /* Master TODO box (dedicated page) */
-  .master-todo {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(22,50,62,0.06);
-  }
-  .master-todo-header {
-    background: linear-gradient(160deg, var(--teal-light), var(--teal));
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-align: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .master-todo-header.done {
-    background: linear-gradient(160deg, #8fa6b1, #5a7480);
-    font-size: 10px;
-  }
-  .done-empty {
-    padding: 24px 12px;
-    text-align: center;
-    font-size: 12px;
-    color: #a9b7bd;
-  }
-  .master-todo-body { flex: 1; display: flex; flex-direction: column; }
-  .todo-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0 6px;
-    border-bottom: 1px dotted var(--line);
-    min-height: 22px;
-  }
-  .todo-item:last-child { border-bottom: none; }
-  .todo-item:first-child { border-top: 1px solid var(--border); }
-  .todo-item:nth-child(odd) { background: #f4fdfb; }
-  .todo-item .num { font-size: 9px; color: #9db2ba; width: 14px; flex-shrink: 0; }
-  .todo-item input[type="checkbox"] {
-    width: 13px; height: 13px; accent-color: var(--teal); flex-shrink: 0; margin: 0; cursor: pointer;
-  }
-  .todo-item input[type="text"] {
-    flex: 1; min-width: 0; border: none; font-family: inherit; font-size: 11px; color: #1e2b33; background: transparent; padding: 3px 0;
-  }
-  .todo-item input[type="text"]:focus { outline: none; }
-  .todo-item input[type="checkbox"]:checked ~ input[type="text"] { color: #9db2ba; text-decoration: line-through; }
-
-  /* Memo */
-  .memo { display: flex; flex-direction: column; }
-  .memo-header {
-    background: linear-gradient(160deg, #6b8592, var(--slate));
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    padding: 8px 12px;
-    border-radius: 8px 8px 0 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .memo-header::before {
-    content: "";
-    display: inline-block;
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #fff; opacity: 0.85;
-  }
-  .memo-body-wrap {
-    border: 1px solid var(--border);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    box-shadow: 0 2px 8px rgba(22,50,62,0.06);
-    overflow: hidden;
-  }
-  .memo textarea {
-    width: 100%;
-    height: 130px;
-    border: none;
-    resize: none;
-    font-family: inherit;
-    font-size: 13px;
-    color: #1e2b33;
-    padding: 8px 12px;
-    background: repeating-linear-gradient(to bottom, transparent, transparent 25px, var(--line) 25px, calc(25px + 1px));
-    line-height: 26px;
-  }
-  .memo textarea:focus { outline: none; }
-
-  .footer { margin-top: 16px; text-align: center; }
-  .footer .brand { font-size: 10px; font-weight: 700; color: var(--slate); letter-spacing: 1.5px; }
-  .footer .tagline { font-size: 9px; color: #a9b7bd; letter-spacing: 0.5px; margin-top: 3px; }
-  .page-brand { display: none; }
-
-  .toolbar {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 14px;
-  }
-  .toolbar button {
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--slate);
-    padding: 7px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .toolbar button:hover { background: #f4f6f7; }
-  .toolbar button.primary {
-    background: linear-gradient(135deg, var(--blue), var(--teal));
-    color: #fff;
-    border: none;
-  }
-  .save-indicator {
-    text-align: center;
-    font-size: 10px;
-    color: #a9b7bd;
-    margin-top: 6px;
-    height: 14px;
-  }
-
-  /* Print-only rendered pages */
-  #printArea { display: none; }
-
-  .print-options {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
-    padding: 10px;
-    background: #f4fbfd;
-    border: 1px solid #d7e6ea;
-    border-radius: 8px;
-  }
-  .print-opt {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--slate);
-    cursor: pointer;
-    padding: 4px 8px;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-  }
-  .print-opt input[type="checkbox"] {
-    width: 14px; height: 14px; accent-color: var(--teal); margin: 0; cursor: pointer;
-  }
-  .print-opt input[type="number"] {
-    width: 44px; padding: 3px 4px; text-align: center; margin-left: 2px;
-    border: 1px solid var(--border); border-radius: 4px;
-    font-family: inherit; font-size: 11px; font-weight: 700; color: var(--navy);
-  }
-  .print-unit { font-size: 11px; color: var(--slate); font-weight: 700; }
-
-
-  .google-sync-panel{margin-top:10px;border:1px solid var(--border);border-radius:8px;background:#fff;overflow:hidden}
-  .google-sync-toggle{width:100%;padding:10px 12px;border:0;background:#fff;font:700 11px inherit;color:var(--slate);cursor:pointer;text-align:left}
-  .google-sync-body{display:none;padding:0 12px 12px}
-  .google-sync-panel.open .google-sync-body{display:block}
-  .google-sync-field{display:block;margin:8px 0}
-  .google-sync-field span{display:block;font-size:10px;font-weight:700;color:var(--slate);margin-bottom:3px}
-  .google-sync-field input,.google-sync-field select{width:100%;padding:7px 8px;border:1px solid var(--border);border-radius:6px;font:12px inherit}
-  .google-sync-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-  .google-sync-actions button{flex:1;min-width:130px;padding:8px;border:1px solid var(--border);border-radius:6px;background:#f4fbfd;font:700 11px inherit;cursor:pointer}
-  .google-sync-actions .primary{border:0;color:#fff;background:linear-gradient(135deg,#4285f4,#34a853)}
-  .google-sync-msg{min-height:14px;margin-top:8px;text-align:center;font-size:10px;color:var(--slate)}
-  .google-sync-msg.ok{color:#1a9e8f}.google-sync-msg.err{color:#c0524a}
-
-  /* GitHub sync panel */
-  .sync-panel {
-    margin-top: 10px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    background: #fff;
-  }
-  .sync-toggle {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    background: #fff;
-    border: none;
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--slate);
-    cursor: pointer;
-  }
-  .sync-toggle:hover { background: #f7fbfd; }
-  .sync-toggle .chev { margin-left: auto; color: #b9c6cc; }
-  .sync-panel.open .sync-toggle .chev { transform: rotate(180deg); }
-  .dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  }
-  .dot.off { background: #cfd9dd; }
-  .dot.on  { background: var(--teal); box-shadow: 0 0 0 3px rgba(26,198,178,0.18); }
-
-  .sync-body { display: none; padding: 0 12px 12px; }
-  .sync-panel.open .sync-body { display: block; }
-
-  .sync-help {
-    font-size: 10px;
-    line-height: 1.6;
-    color: #8a9ba3;
-    margin: 0 0 10px;
-  }
-  .sync-field {
-    display: block;
-    margin-bottom: 8px;
-  }
-  .sync-field span {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--slate);
-    margin-bottom: 3px;
-  }
-  .sync-field input {
-    width: 100%;
-    padding: 7px 8px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 12px;
-    color: var(--navy);
-    box-sizing: border-box;
-  }
-  .sync-field input:focus { outline: none; border-color: var(--teal); }
-
-  .sync-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-  }
-  .sync-actions button {
-    flex: 1;
-    min-width: 120px;
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 700;
-    border: 1px solid var(--border);
-    background: #f4fbfd;
-    color: var(--slate);
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .sync-actions button:hover { background: #e8f7fb; }
-  .sync-actions button.danger { background: #fff; color: #c0736c; border-color: #eddad8; }
-  .sync-msg {
-    margin-top: 8px;
-    font-size: 10px;
-    color: var(--slate);
-    min-height: 14px;
-    text-align: center;
-  }
-  .sync-msg.err { color: #c0524a; }
-  .sync-msg.ok  { color: #1a9e8f; }
-
-
-  /* 今日の行を画面上だけ強調表示 */
-  .day-row.today {
-    background: #fff7cc !important;
-    box-shadow: inset 4px 0 0 #f2b705;
-  }
-  .day-row.today .day-label {
-    background: #fff1a8;
-  }
-
-  @media print {
-    .day-row.today,
-    .day-row.today .day-label {
-      background: inherit !important;
-      box-shadow: none !important;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>陸上部 練習メニュー管理</title>
+  <style>
+    :root{
+      --bg:#f3f6f9;
+      --panel:#ffffff;
+      --text:#17202a;
+      --muted:#667085;
+      --line:#dfe5ec;
+      --brand:#00a878;
+      --brand-dark:#007a5a;
+      --accent:#d9f7ec;
+      --danger:#c92a2a;
+      --shadow:0 10px 30px rgba(22,34,48,.08);
+      --radius:16px;
     }
-    body { background: #fff !important; padding: 0 !important; margin: 0 !important; font-size: 10pt !important; }
-
-    /* Hide the live app; show only the generated print pages */
-    .sheet { display: none !important; }
-    .toolbar, .save-indicator, .tabs, .footer, .print-options, .sync-panel { display: none !important; }
-    .page-brand { display: none !important; }
-    #printArea { display: block !important; }
-
-    .print-sheet {
-      box-shadow: none !important;
-      max-width: none !important;
-      width: 148mm !important;
-      height: 210mm !important;
-      overflow: hidden !important;
-      border-radius: 0 !important;
-      padding: 4mm 7mm 6mm 7mm !important;
-      box-sizing: border-box !important;
-      display: flex !important;
-      flex-direction: column !important;
-      page-break-after: always !important;
-      break-after: page !important;
-      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", "Yu Gothic", sans-serif !important;
-      color: #1e2b33 !important;
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;
+      background:var(--bg);
+      color:var(--text);
     }
-    .print-sheet:last-child { page-break-after: avoid !important; break-after: avoid !important; }
-
-    .planner-table, .master-todo, .memo-body-wrap { box-shadow: none !important; }
-    textarea, select { color: #1e2b33 !important; }
-
-    /* Header compact for print */
-    .header { margin-bottom: 2mm !important; }
-    .title { font-size: 14pt !important; }
-    .title .sub { font-size: 8pt !important; margin-top: 1mm !important; }
-    .datebox .field { padding: 1mm 3mm !important; }
-    .datebox .field span.label { font-size: 7pt !important; }
-    .datebox input { font-size: 9pt !important; }
-    .datebox .range-inputs input[type="date"] { width: 26mm !important; }
-    .datebox .start-date { font-size: 9pt !important; min-width: 24mm !important; }
-    .accent-bar { margin-bottom: 0 !important; height: 2mm !important; border-radius: 0 !important; }
-
-    /* Page 1: schedule + memo fills the A5 sheet */
-    #pageSchedule, .page-schedule {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 1 auto !important;
-      min-height: 0 !important;
-      height: auto !important;
-      max-height: none !important;
-      overflow: hidden !important;
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    header{
+      position:sticky;
+      top:0;
+      z-index:20;
+      background:linear-gradient(135deg,#00b884,#008f68);
+      color:white;
+      box-shadow:0 3px 16px rgba(0,0,0,.18);
     }
-    /* TODO list page */
-    #pageTodo, .page-todo {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 1 auto !important;
-      min-height: 0 !important;
-      height: auto !important;
-      max-height: none !important;
-      overflow: hidden !important;
+    .header-inner{
+      max-width:1400px;
+      margin:auto;
+      padding:14px 18px 10px;
+    }
+    .topline{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    h1{font-size:21px;margin:0;letter-spacing:.03em}
+    .save-state{font-size:12px;opacity:.9}
+    nav{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:8px;
+    }
+    nav button{
+      border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.10);
+      color:white;
+      border-radius:10px;
+      padding:9px 6px;
+      font-weight:700;
+      font-size:13px;
+    }
+    nav button.active{background:white;color:var(--brand)}
+    main{max-width:1400px;margin:auto;padding:18px}
+    .view{display:none}
+    .view.active{display:block}
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+      margin-bottom:16px;
+    }
+    .panel-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .panel-title h2,.panel-title h3{margin:0}
+    .muted{color:var(--muted)}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    label{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
+    input,textarea,select{
+      width:100%;
+      border:1px solid #cfd7e2;
+      border-radius:10px;
+      padding:10px 11px;
+      background:white;
+      color:var(--text);
+    }
+    textarea{min-height:90px;resize:vertical}
+    .field{margin-bottom:12px}
+    .btn{
+      border:none;
+      border-radius:10px;
+      padding:10px 14px;
+      font-weight:800;
+    }
+    .btn-primary{background:var(--brand);color:white}
+    .btn-primary:hover{background:var(--brand-dark)}
+    .btn-secondary:hover{background:#d4f2e7}
+    input:focus,textarea:focus,select:focus{
+      outline:none;
+      border-color:#00a878;
+      box-shadow:0 0 0 3px rgba(0,168,120,.14);
+    }
+    .section-block{border-color:#cfeee2}
+    .panel{border-color:#d6ece4}
+
+    .btn-secondary{background:#e4f7f0;color:#075f49}
+    .btn-danger{background:#fff0f0;color:var(--danger);border:1px solid #ffd0d0}
+    .btn-small{padding:7px 10px;font-size:12px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .category-chip{
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:12px;
+      font-weight:800;
+      background:var(--accent);
+      color:var(--brand-dark);
+    }
+    .menu-list{display:grid;gap:10px}
+    .menu-card{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:13px;
+      background:#f8fffc;
+    }
+    .menu-card-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .menu-card h4{margin:0 0 6px;font-size:16px}
+    .menu-meta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin:7px 0;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .day-builder{
+      display:grid;
+      grid-template-columns:280px 1fr;
+      gap:16px;
+    }
+    .sticky-side{position:sticky;top:125px;align-self:start}
+    .section-block{
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
+      margin-bottom:14px;
+      background:white;
+    }
+    .section-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:12px 14px;
+      background:#eefbf6;
+      border-bottom:1px solid var(--line);
+    }
+    .section-header h3{margin:0;font-size:16px}
+    .selected-list{padding:10px;min-height:70px}
+    .selected-item{
+      display:grid;
+      grid-template-columns:28px 1fr auto;
+      gap:9px;
+      align-items:center;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px;
+      margin-bottom:8px;
+      background:#fff;
+    }
+    .drag{font-weight:900;color:#98a2b3;user-select:none}
+    .selected-item strong{display:block}
+    .selected-item small{color:var(--muted)}
+    .empty{
+      text-align:center;
+      color:#98a2b3;
+      padding:18px 8px;
+      border:1px dashed #ccd5df;
+      border-radius:10px;
+    }
+    .filters{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+      margin-bottom:16px;
+    }
+    .stat{
+      background:white;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      box-shadow:var(--shadow);
+    }
+    .stat strong{font-size:24px;display:block}
+    .calendar-list{display:grid;gap:10px}
+    .calendar-day{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:14px;
+      background:white;
+    }
+    .calendar-day h3{margin:0 0 8px}
+    .calendar-group{margin:8px 0}
+    .calendar-group b{font-size:13px}
+    .calendar-group ul{margin:6px 0 0 20px;padding:0}
+    .toolbar{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .toolbar > *{min-width:180px}
+    .notice{
+      background:#fff8e6;
+      border:1px solid #f3d98f;
+      border-radius:12px;
+      padding:12px;
+      color:#6d5311;
+      margin-bottom:14px;
     }
 
-    .content-row { flex: none !important; margin-top: 0 !important; margin-bottom: 3mm !important; }
-    .planner-table { flex: none !important; display: flex !important; flex-direction: column !important; }
-    .table-header { flex: none !important; }
-    .col-header { padding: 1.5mm 0 !important; font-size: 9pt !important; }
-    .col-header.date { width: 15mm !important; }
-    .col-header.todo { width: 58mm !important; font-size: 8pt !important; }
-    .table-body { flex: none !important; }
-    .day-column { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; }
-    .day-todo-column { width: 58mm !important; }
-
-    /* Each day: exactly 4 lines of 5mm = 20mm row */
-    .day-row { flex: none !important; height: 20mm !important; min-height: 20mm !important; overflow: hidden !important; }
-    .day-label { width: 15mm !important; padding: 1mm 1mm !important; }
-    .day-label .date-num { font-size: 11pt !important; }
-    .day-label .dow-jp { font-size: 7pt !important; margin-top: 1mm !important; }
-
-    .day-content { flex: 1 1 auto !important; height: 20mm !important; overflow: hidden !important; }
-
-    .event-lines{padding:0 1mm!important;gap:0!important;height:20mm!important;overflow:hidden!important}
-    .event-line{height:5mm!important;min-height:5mm!important;gap:1mm!important;border-left-width:1mm!important}
-    .event-color,.color-picker{display:none!important}
-    .event-text{font-size:8.5pt!important;border-bottom:none!important;padding:0 1mm!important}
-
-    .day-content textarea {
-      flex: none !important;
-      height: 20mm !important;
-      min-height: 20mm !important;
-      max-height: 20mm !important;
-      line-height: 5mm !important;
-      padding: 0 2mm !important;
-      background: repeating-linear-gradient(to bottom, transparent, transparent calc(5mm - 0.15mm), var(--line-soft) calc(5mm - 0.15mm), 5mm) !important;
-      background-size: 100% 20mm !important;
-      background-position: 0 0 !important;
-      font-size: 9pt !important;
-      box-sizing: border-box !important;
+    .auth-bar{
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
     }
-    .day-todo-cell {
-      flex: none !important;
-      height: 20mm !important;
-      min-height: 20mm !important;
-      max-height: 20mm !important;
-      padding: 0 2mm !important;
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: flex-start !important;
-      overflow: hidden !important;
-      box-sizing: border-box !important;
+    .auth-bar button{
+      border:1px solid rgba(255,255,255,.35);
+      background:rgba(255,255,255,.14);
+      color:white;border-radius:9px;padding:7px 10px;font-weight:700;
     }
-    .mini-check { height: 5mm !important; line-height: 5mm !important; gap: 2mm !important; }
-    .mini-check input[type="checkbox"] { width: 3mm !important; height: 3mm !important; }
-    .mini-check .mini-text { font-size: 8pt !important; border-bottom: none !important; }
-    .mini-check .mini-pick { display: none !important; }
-
-    /* MEMO absorbs the rest of the sheet */
-    .memo {
-      flex: 1 1 auto !important;
-      height: auto !important;
-      min-height: 0 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      border: 1px solid var(--border) !important;
-      border-radius: 4px !important;
-      overflow: hidden !important;
-      margin-bottom: 0 !important;
-      box-sizing: border-box !important;
+    .login-overlay{
+      position:fixed;inset:0;z-index:100;background:rgba(5,31,25,.82);
+      display:flex;align-items:center;justify-content:center;padding:18px;
     }
-    .memo-header { display: none !important; }
-    .memo-body-wrap { flex: 1 1 auto !important; display: flex !important; height: auto !important; border: none !important; border-radius: 0 !important; }
-    .memo textarea {
-      flex: 1 1 auto !important;
-      height: auto !important;
-      line-height: 6mm !important;
-      padding: 1mm 3mm !important;
-      font-size: 10pt !important;
-      background: repeating-linear-gradient(to bottom, transparent, transparent calc(6mm - 0.15mm), var(--line) calc(6mm - 0.15mm), 6mm) !important;
+    .login-overlay.hidden{display:none}
+    .login-card{
+      width:min(440px,100%);background:white;border-radius:18px;
+      padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.28);
     }
-
-    /* Page 2: TODO list fills page */
-    .master-todo { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; margin-top: 10mm !important; }
-    .master-todo-header { padding: 2mm 0 !important; font-size: 10pt !important; }
-    .master-todo-body { flex: 1 1 auto !important; }
-    .todo-item { flex: 1 1 auto !important; min-height: 5mm !important; padding: 0 3mm !important; }
-    .todo-item .num { font-size: 8pt !important; }
-    .todo-item input[type="checkbox"] { width: 3.5mm !important; height: 3.5mm !important; }
-    .todo-item input[type="text"] { font-size: 10pt !important; }
-
-    .page-brand {
-      display: block !important;
-      text-align: center !important;
-      font-size: 8pt !important;
-      font-weight: 700 !important;
-      color: var(--slate) !important;
-      letter-spacing: 1.5px !important;
-      margin-top: 3mm !important;
+    .login-card h2{margin:0 0 6px}
+    .login-card .btn{width:100%;margin-top:8px}
+    .db-badge{
+      display:inline-flex;align-items:center;gap:6px;padding:5px 9px;
+      border-radius:999px;font-size:12px;font-weight:800;
+      background:rgba(255,255,255,.16);color:white;
     }
+    .db-dot{width:8px;height:8px;border-radius:50%;background:#ffd43b}
+    .db-dot.online{background:#69db7c}
+    .db-dot.offline{background:#ff8787}
 
-    @page { size: A5; margin: 0; }
-  }
-
-  @media (max-width: 480px) {
-    .content-row { flex-direction: column; }
-    .planner-table, .master-todo { width: 100%; }
-    .day-content textarea { font-size: 11px; }
-  }
-</style>
-
-<script>
-if (!window.storage) {
-  window.storage = {
-    async get(key) {
-      const value = localStorage.getItem(key);
-      if (value === null) throw new Error('not found');
-      return { value };
-    },
-    async set(key, value) {
-      localStorage.setItem(key, value);
-      return { value };
+    @media(max-width:900px){
+      .grid-2,.grid-3,.summary,.day-builder{grid-template-columns:1fr}
+      .sticky-side{position:static}
+      nav{grid-template-columns:repeat(2,1fr)}
+      .filters{grid-template-columns:1fr}
     }
-  };
-}
-</script>
-
-
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="shortcut icon" href="favicon.ico">
-<link rel="manifest" href="site.webmanifest">
-<meta name="theme-color" content="#1ac6b2">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="家族カレンダー">
-
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+    @media print{
+      header,.no-print,#menuLibraryPanel,#builderSide{display:none !important}
+      body{background:white}
+      main{max-width:none;padding:0}
+      .panel,.section-block,.calendar-day{box-shadow:none;break-inside:avoid}
+      .view{display:none!important}
+      .view.print-target{display:block!important}
+    }
+  </style>
 </head>
 <body>
-  <div class="sheet">
-    <div class="header">
-      <div class="title">
-        <span>
-          WEEKLY PLANNER
-          <span class="sub">週間スケジュール ・ 共通TODO ・ メモ</span>
-        </span>
-      </div>
-      <div class="datebox">
-        <div class="field range">
-          <span class="label">週</span>
-          <div class="range-inputs">
-            <span class="start-date" id="startDateLabel"></span>
-            <span class="range-sep">〜</span>
-            <input type="date" id="endDateInput">
-            <button id="todayBtn" type="button" style="margin-left:6px;padding:4px 10px;border:1px solid #cfd9dd;border-radius:6px;background:#f4fbfd;font-weight:700;cursor:pointer;">今日</button>
-          </div>
-        </div>
-      </div>
+
+<div class="login-overlay hidden" id="loginOverlay">
+  <div class="login-card">
+    <h2>コーチログイン</h2>
+    <p class="muted">登録されたコーチ全員で、同じメニューと練習予定を共有します。</p>
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" id="loginEmail" autocomplete="email">
     </div>
-    <div class="accent-bar"></div>
-
-    <div class="tabs">
-      <button class="tab-btn active" id="tabSchedule">週間表</button>
-      <button class="tab-btn" id="tabTodo">TODOリスト</button>
-      <button class="tab-btn" id="tabDone">完了リスト</button>
-      <a class="calendar-link" href="monthly_calendar.html">月間カレンダー</a>
-      <a class="calendar-link" href="annual_calendar.html">年間カレンダー</a>
+    <div class="field">
+      <label>パスワード</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
     </div>
-
-    <div class="page active" id="pageSchedule">
-      <div class="content-row">
-        <div class="planner-table">
-          <div class="table-header">
-            <div class="col-header date">日</div>
-            <div class="col-header schedule">予定</div>
-            <div class="col-header todo">TODO</div>
-          </div>
-          <div class="table-body">
-            <div class="day-column" id="dayColumn"></div>
-            <div class="day-todo-column" id="dayTodoColumn"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="memo">
-        <div class="memo-header">MEMO</div>
-        <div class="memo-body-wrap">
-          <textarea id="memoText" placeholder=""></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="page-brand" id="brandPage1">進路相談室 ROUTE</div>
-
-    <div class="page" id="pageTodo">
-      <div class="master-todo">
-        <div class="master-todo-header">TODOリスト（20項目）</div>
-        <div class="master-todo-body" id="masterTodoBody"></div>
-      </div>
-    </div>
-    <div class="page-brand" id="brandPage2">進路相談室 ROUTE</div>
-
-    <div class="page" id="pageDone">
-      <div class="master-todo">
-        <div class="master-todo-header done">完了したTODO（チェックを外すと戻ります）</div>
-        <div class="master-todo-body" id="doneTodoBody"></div>
-      </div>
-    </div>
-
-    <div class="footer">
-      <div class="brand">進路相談室 ROUTE</div>
-      <div class="tagline">すべての家庭に、進路の地図を。</div>
-    </div>
-
-    <div class="print-options">
-      <label class="print-opt">
-        <input type="checkbox" id="optWeek" checked>
-        <span>週間表</span>
-        <input type="number" id="printWeeksInput" min="1" max="12" value="1">
-        <span class="print-unit">週分</span>
-      </label>
-      <label class="print-opt">
-        <input type="checkbox" id="optTodo" checked>
-        <span>TODOリスト</span>
-      </label>
-      <label class="print-opt">
-        <input type="checkbox" id="optDone">
-        <span>完了リスト</span>
-      </label>
-    </div>
-
-    <div class="sync-panel">
-      <button class="sync-toggle" id="syncToggle">
-        <span id="syncStatusDot" class="dot off"></span>
-        クラウド同期（GitHub）
-        <span class="chev">▾</span>
-      </button>
-
-      <div class="sync-body" id="syncBody">
-        <p class="sync-help">
-          スマホとPCで同じデータを使うための設定です。<br>
-          トークンはこの端末内にのみ保存され、外部には送信されません（GitHub以外には通信しません）。
-        </p>
-
-        <label class="sync-field">
-          <span>GitHubトークン</span>
-          <input type="password" id="ghToken" placeholder="ghp_ ... （gist権限のみ）" autocomplete="off">
-        </label>
-
-        <label class="sync-field">
-          <span>Gist ID（空欄なら新規作成）</span>
-          <input type="text" id="ghGist" placeholder="例: 3f8a1c... " autocomplete="off">
-        </label>
-
-        <div class="sync-actions">
-          <button id="btnPush">この端末 → クラウドへ保存</button>
-          <button id="btnPull">クラウド → この端末へ読込</button>
-          <button id="btnForget" class="danger">接続を解除</button>
-        </div>
-        <div class="sync-msg" id="syncMsg"></div>
-      </div>
-    </div>
-
-
-    <div class="google-sync-panel">
-      <button class="google-sync-toggle" id="googleSyncToggle">Googleカレンダー連携 ▾</button>
-      <div class="google-sync-body">
-        <p style="font-size:10px;line-height:1.6;color:#8a9ba3;margin:0 0 8px">
-          週間プランナーの予定をGoogleカレンダーへ追加・更新します。
-        </p>
-        <label class="google-sync-field">
-          <span>Google OAuth クライアントID</span>
-          <input id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com">
-        </label>
-        <label class="google-sync-field">
-          <span>同期期間</span>
-          <select id="googleSyncRange">
-            <option value="week">表示中の1週間</option>
-            <option value="year">表示中の週から1年間</option>
-          </select>
-        </label>
-        <div class="google-sync-actions">
-          <button id="googleConnectBtn">Googleに接続</button>
-          <button id="googleSyncBtn" class="primary">Googleカレンダーへ同期</button>
-        </div>
-        <div id="googleSyncMsg" class="google-sync-msg"></div>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <button class="primary" id="saveBtn">保存する</button>
-      <button id="printBtn">印刷する</button>
-      <button id="resetBtn">クリア</button>
-    </div>
-    <div class="save-indicator" id="saveIndicator"></div>
+    <button class="btn btn-primary" id="loginButton">ログイン</button>
+    <button class="btn btn-secondary" id="registerAccountButton">新しいコーチアカウントを作成</button>
+    <p class="muted" id="loginMessage"></p>
   </div>
+</div>
 
-  <div id="printArea"></div>
-
-  <script>
-    const DOW_JP = ['日','月','火','水','木','金','土'];
-    const WEEKS_KEY = 'planner2-weeks-db-v1';   // { "2026-07-13": { days:[...], memo:"" }, ... }
-    const TODOS_KEY = 'planner2-todos-db-v1';   // { items: [ {id, text, done} ] }
-
-    function pad(n) { return n < 10 ? '0' + n : '' + n; }
-
-    function escapeHtml(str) {
-      return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-
-
-function colorPickerHtml(color='white'){
-  return `<div class="color-picker" data-color="${color}">
-    <button type="button" class="color-tile" data-color="${color}" aria-label="色を選択"></button>
-    <div class="color-palette">
-      ${['white','blue','red','green','pink'].map(c=>`<button type="button" class="color-choice ${c===color?'selected':''}" data-color="${c}" aria-label="${c}"></button>`).join('')}
+<header>
+  <div class="header-inner">
+    <div class="topline">
+      <h1>陸上部 練習メニュー管理</h1>
+      <div class="auth-bar">
+        <span class="db-badge"><span class="db-dot" id="dbDot"></span><span id="dbStatus">接続確認中</span></span>
+        <span class="save-state" id="saveState">保存準備中</span>
+        <button id="logoutButton" style="display:none">ログアウト</button>
+      </div>
     </div>
+    <nav>
+      <button data-view="today" class="active">今日・日別</button>
+      <button data-view="builder">練習作成</button>
+      <button data-view="menus">メニュー一覧</button>
+      <button data-view="register">メニュー登録</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section id="view-today" class="view active">
+    <div class="summary">
+      <div class="stat"><span class="muted">登録メニュー</span><strong id="statMenus">0</strong></div>
+      <div class="stat"><span class="muted">作成済み日数</span><strong id="statDays">0</strong></div>
+      <div class="stat"><span class="muted">本日のメニュー数</span><strong id="statToday">0</strong></div>
+      <div class="stat"><span class="muted">種目カテゴリー</span><strong>7</strong></div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar no-print">
+        <input type="date" id="todayDate">
+        <div class="actions">
+          <button class="btn btn-secondary" id="editSelectedDay">この日を編集</button>
+          <button class="btn btn-primary" id="printDay">この日を印刷</button>
+        </div>
+      </div>
+      <div id="todayContent"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">
+        <h2>作成済み練習一覧</h2>
+      </div>
+      <div id="calendarList" class="calendar-list"></div>
+    </div>
+  </section>
+
+  <section id="view-builder" class="view">
+    <div class="notice">
+      前半に「全体メニュー・筋トレ」、中央に各種目、後半に「筋トレ・全体メニュー」を配置できます。
+    </div>
+
+    <div class="day-builder">
+      <aside id="builderSide" class="panel sticky-side no-print">
+        <div class="panel-title"><h3>練習日</h3></div>
+        <div class="field">
+          <label>日付</label>
+          <input type="date" id="builderDate">
+        </div>
+        <div class="field">
+          <label>練習テーマ</label>
+          <input id="dayTheme" placeholder="例：スピード持久・技術確認">
+        </div>
+        <div class="field">
+          <label>連絡事項</label>
+          <textarea id="dayNotes" placeholder="集合時間、場所、注意点など"></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="saveDay">保存</button>
+          <button class="btn btn-secondary" id="copyPrevious">前日をコピー</button>
+          <button class="btn btn-danger" id="deleteDay">この日を削除</button>
+        </div>
+      </aside>
+
+      <div>
+        <div id="builderSections"></div>
+
+        <div class="panel no-print" id="menuLibraryPanel">
+          <div class="panel-title"><h2>一覧から追加</h2></div>
+          <div class="filters">
+            <select id="builderCategoryFilter"></select>
+            <input id="builderSearch" placeholder="メニュー名・内容で検索">
+          </div>
+          <div id="builderMenuLibrary" class="menu-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-menus" class="view">
+    <div class="panel">
+      <div class="panel-title">
+        <h2>メニュー一覧</h2>
+        <span class="muted" id="menuCountLabel"></span>
+      </div>
+      <div class="filters no-print">
+        <select id="menuCategoryFilter"></select>
+        <input id="menuSearch" placeholder="メニュー名・内容で検索">
+      </div>
+      <div id="menuList" class="menu-list"></div>
+    </div>
+  </section>
+
+  <section id="view-register" class="view">
+    <div class="panel">
+      <div class="panel-title">
+        <h2 id="registerTitle">メニュー登録</h2>
+      </div>
+      <input type="hidden" id="editMenuId">
+      <div class="grid-2">
+        <div>
+          <div class="field">
+            <label>メニュー名</label>
+            <input id="menuName" placeholder="例：120m×3＋80m×3">
+          </div>
+          <div class="field">
+            <label>メニュー種別</label>
+            <select id="menuCategory"></select>
+          </div>
+          <div class="field">
+            <label>配置場所</label>
+            <select id="menuPlacement">
+              <option value="middle">種目別・中央</option>
+              <option value="before">練習前半</option>
+              <option value="after">練習後半</option>
+              <option value="both">前半・後半どちらでも</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>内容</label>
+            <textarea id="menuDetail" placeholder="実施方法や流れ"></textarea>
+          </div>
+        </div>
+        <div>
+          <div class="field">
+            <label>本数・セット数</label>
+            <input id="menuSets" placeholder="例：3本×2セット">
+          </div>
+          <div class="field">
+            <label>設定タイム・強度</label>
+            <input id="menuIntensity" placeholder="例：90％、15秒設定">
+          </div>
+          <div class="field">
+            <label>レスト</label>
+            <input id="menuRest" placeholder="例：3分、セット間10分">
+          </div>
+          <div class="field">
+            <label>所要時間</label>
+            <input id="menuDuration" placeholder="例：30分">
+          </div>
+          <div class="field">
+            <label>対象</label>
+            <input id="menuTarget" placeholder="例：短距離全員、1年生">
+          </div>
+          <div class="field">
+            <label>注意点</label>
+            <textarea id="menuCaution" placeholder="フォーム、怪我予防、器具準備など"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="saveMenu">メニューを保存</button>
+        <button class="btn btn-secondary" id="resetMenuForm">入力をリセット</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+const CATEGORIES = [
+  "全体メニュー","短距離メニュー","ハードルメニュー","跳躍メニュー",
+  "投擲メニュー","長距離メニュー","筋トレメニュー"
+];
+
+const SECTIONS = [
+  {id:"beforeOverall", label:"練習前半：全体メニュー", accepts:["全体メニュー"], placement:["before","both"]},
+  {id:"beforeStrength", label:"練習前半：筋トレ", accepts:["筋トレメニュー"], placement:["before","both"]},
+  {id:"sprint", label:"短距離メニュー", accepts:["短距離メニュー"], placement:["middle","both"]},
+  {id:"hurdle", label:"ハードルメニュー", accepts:["ハードルメニュー"], placement:["middle","both"]},
+  {id:"jump", label:"跳躍メニュー", accepts:["跳躍メニュー"], placement:["middle","both"]},
+  {id:"throw", label:"投擲メニュー", accepts:["投擲メニュー"], placement:["middle","both"]},
+  {id:"distance", label:"長距離メニュー", accepts:["長距離メニュー"], placement:["middle","both"]},
+  {id:"middleStrength", label:"種目別：筋トレ", accepts:["筋トレメニュー"], placement:["middle","both"]},
+  {id:"afterStrength", label:"練習後半：筋トレ", accepts:["筋トレメニュー"], placement:["after","both"]},
+  {id:"afterOverall", label:"練習後半：全体メニュー", accepts:["全体メニュー"], placement:["after","both"]}
+];
+
+const starterMenus = [
+  {id:crypto.randomUUID(),name:"ウォーミングアップ",category:"全体メニュー",placement:"before",detail:"ジョグ、動的ストレッチ、基本ドリル",sets:"",intensity:"低〜中",rest:"",duration:"20分",target:"全員",caution:"体調確認を行う"},
+  {id:crypto.randomUUID(),name:"クールダウン",category:"全体メニュー",placement:"after",detail:"軽いジョグと静的ストレッチ",sets:"",intensity:"低",rest:"",duration:"15分",target:"全員",caution:"痛みがある選手は個別対応"},
+  {id:crypto.randomUUID(),name:"120m×3＋80m×3",category:"短距離メニュー",placement:"middle",detail:"120m後に十分休息し、80mでスピードを確認",sets:"1セット",intensity:"90〜95％",rest:"各5分",duration:"40分",target:"短距離",caution:"後半のフォーム維持"},
+  {id:crypto.randomUUID(),name:"ハードル5台走",category:"ハードルメニュー",placement:"middle",detail:"アプローチから5台目までのリズム確認",sets:"5本",intensity:"85〜90％",rest:"5分",duration:"35分",target:"ハードル",caution:"インターバルを崩さない"},
+  {id:crypto.randomUUID(),name:"助走＋踏切練習",category:"跳躍メニュー",placement:"middle",detail:"短助走から踏切位置と姿勢を確認",sets:"8〜10本",intensity:"中",rest:"適宜",duration:"40分",target:"跳躍",caution:"踏切足の状態確認"},
+  {id:crypto.randomUUID(),name:"メディシンボール投げ",category:"投擲メニュー",placement:"middle",detail:"前方・後方・回旋投げ",sets:"各5回×2",intensity:"中",rest:"1分",duration:"25分",target:"投擲",caution:"周囲の安全確認"},
+  {id:crypto.randomUUID(),name:"1000m×5",category:"長距離メニュー",placement:"middle",detail:"一定ペースで反復",sets:"5本",intensity:"設定ペース",rest:"200mジョグ",duration:"50分",target:"長距離",caution:"設定から大きく外れない"},
+  {id:crypto.randomUUID(),name:"体幹サーキット",category:"筋トレメニュー",placement:"both",detail:"プランク、サイドプランク、ヒップリフト",sets:"各30秒×2",intensity:"中",rest:"30秒",duration:"12分",target:"全員",caution:"姿勢を優先"}
+];
+
+let menus = JSON.parse(localStorage.getItem("trackMenus") || "null") || starterMenus;
+let days = JSON.parse(localStorage.getItem("trackDays") || "{}");
+let currentBuilder = blankDay();
+let firebaseReady = false;
+let firestore = null;
+let auth = null;
+let currentUser = null;
+let unsubscribeState = null;
+const TEAM_ID = "athletics-club";
+const STATE_DOC_PATH = `teams/${TEAM_ID}/state/main`;
+let cloudSaveTimer = null;
+
+function blankDay(){
+  const sections = {};
+  SECTIONS.forEach(s => sections[s.id] = []);
+  return {theme:"",notes:"",sections};
+}
+
+function todayISO(){
+  const d = new Date();
+  const tz = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return tz.toISOString().slice(0,10);
+}
+
+function saveAll(){
+  localStorage.setItem("trackMenus", JSON.stringify(menus));
+  localStorage.setItem("trackDays", JSON.stringify(days));
+  const el = document.getElementById("saveState");
+  el.textContent = firebaseReady && currentUser ? "クラウド保存中…" : "端末に保存しました";
+  renderAll();
+
+  if(firebaseReady && currentUser && firestore){
+    clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(async()=>{
+      try{
+        await firestore.doc(STATE_DOC_PATH).set({
+          menus,
+          days,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: currentUser.email || currentUser.uid
+        }, {merge:true});
+        el.textContent = "クラウド保存済み " + new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+      }catch(error){
+        console.error(error);
+        el.textContent = "クラウド保存エラー";
+        setDbStatus("保存エラー","offline");
+      }
+    },350);
+  }
+}
+
+function esc(v){
+  return String(v ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+}
+
+function formatDate(dateStr){
+  if(!dateStr) return "";
+  return new Date(dateStr+"T00:00:00").toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
+}
+
+function navTo(view){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+  document.getElementById("view-"+view).classList.add("active");
+  document.querySelector(`nav button[data-view="${view}"]`).classList.add("active");
+  window.scrollTo({top:0});
+}
+
+document.querySelectorAll("nav button").forEach(btn=>{
+  btn.addEventListener("click",()=>navTo(btn.dataset.view));
+});
+
+function fillSelects(){
+  const opts = CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join("");
+  document.getElementById("menuCategory").innerHTML = opts;
+  const filter = `<option value="">すべての種類</option>` + opts;
+  document.getElementById("menuCategoryFilter").innerHTML = filter;
+  document.getElementById("builderCategoryFilter").innerHTML = filter;
+}
+
+function menuCard(m, mode="list"){
+  const meta = [m.sets,m.intensity,m.rest,m.duration,m.target].filter(Boolean).map(esc).join("／");
+  let actions = "";
+  if(mode==="list"){
+    actions = `<div class="actions">
+      <button class="btn btn-secondary btn-small" onclick="editMenu('${m.id}')">編集</button>
+      <button class="btn btn-danger btn-small" onclick="removeMenu('${m.id}')">削除</button>
+    </div>`;
+  } else {
+    const suitable = SECTIONS.filter(s=>s.accepts.includes(m.category) && s.placement.includes(m.placement));
+    actions = `<div class="actions">${suitable.map(s=>`<button class="btn btn-primary btn-small" onclick="addToSection('${s.id}','${m.id}')">${esc(s.label)}へ追加</button>`).join("")}</div>`;
+  }
+  return `<div class="menu-card">
+    <div class="menu-card-top">
+      <div>
+        <h4>${esc(m.name)}</h4>
+        <span class="category-chip">${esc(m.category)}</span>
+      </div>
+      ${mode==="list" ? actions : ""}
+    </div>
+    ${m.detail ? `<p>${esc(m.detail)}</p>` : ""}
+    ${meta ? `<div class="menu-meta">${meta}</div>` : ""}
+    ${m.caution ? `<div class="muted">注意：${esc(m.caution)}</div>` : ""}
+    ${mode!=="list" ? actions : ""}
   </div>`;
 }
-function setupColorPicker(picker,onChange){
-  const tile=picker.querySelector('.color-tile');
-  const choices=[...picker.querySelectorAll('.color-choice')];
-  tile.addEventListener('click',e=>{
-    e.stopPropagation();
-    document.querySelectorAll('.color-picker.open').forEach(p=>{if(p!==picker)p.classList.remove('open')});
-    picker.classList.toggle('open');
-  });
-  choices.forEach(btn=>btn.addEventListener('click',e=>{
-    e.stopPropagation();
-    const color=btn.dataset.color;
-    picker.dataset.color=color;
-    tile.dataset.color=color;
-    choices.forEach(x=>x.classList.toggle('selected',x===btn));
-    picker.classList.remove('open');
-    if(onChange) onChange(color);
-  }));
-}
-document.addEventListener('click',()=>document.querySelectorAll('.color-picker.open').forEach(p=>p.classList.remove('open')));
 
-const EVENT_COLORS={
-  white:{label:'',hex:'#ffffff'},
-  blue:{label:'青',hex:'#2491d6'},
-  red:{label:'赤',hex:'#e0574a'},
-  green:{label:'緑',hex:'#1ac6b2'},
-  pink:{label:'ピンク',hex:'#e97fa8'}
+function filteredMenus(categoryId,searchId){
+  const cat = document.getElementById(categoryId).value;
+  const q = document.getElementById(searchId).value.toLowerCase();
+  return menus.filter(m => (!cat || m.category===cat) && (!q || `${m.name} ${m.detail} ${m.target}`.toLowerCase().includes(q)));
+}
+
+function renderMenuList(){
+  const list = filteredMenus("menuCategoryFilter","menuSearch");
+  document.getElementById("menuCountLabel").textContent = `${list.length}件`;
+  document.getElementById("menuList").innerHTML = list.length ? list.map(m=>menuCard(m)).join("") : `<div class="empty">該当するメニューがありません</div>`;
+}
+
+function renderBuilderLibrary(){
+  const list = filteredMenus("builderCategoryFilter","builderSearch");
+  document.getElementById("builderMenuLibrary").innerHTML = list.length ? list.map(m=>menuCard(m,"builder")).join("") : `<div class="empty">該当するメニューがありません</div>`;
+}
+
+function renderBuilderSections(){
+  document.getElementById("builderSections").innerHTML = SECTIONS.map(section=>{
+    const ids = currentBuilder.sections[section.id] || [];
+    const items = ids.map((id,index)=>{
+      const m = menus.find(x=>x.id===id);
+      if(!m) return "";
+      return `<div class="selected-item">
+        <div class="drag">≡</div>
+        <div><strong>${esc(m.name)}</strong><small>${esc([m.sets,m.intensity,m.rest].filter(Boolean).join("／"))}</small></div>
+        <div class="actions">
+          <button class="btn btn-secondary btn-small" onclick="moveItem('${section.id}',${index},-1)">↑</button>
+          <button class="btn btn-secondary btn-small" onclick="moveItem('${section.id}',${index},1)">↓</button>
+          <button class="btn btn-danger btn-small" onclick="removeFromSection('${section.id}',${index})">削除</button>
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="section-block">
+      <div class="section-header">
+        <h3>${esc(section.label)}</h3>
+        <span class="muted">${ids.length}件</span>
+      </div>
+      <div class="selected-list">${items || `<div class="empty">メニュー未設定</div>`}</div>
+    </div>`;
+  }).join("");
+}
+
+window.addToSection = (sectionId,menuId)=>{
+  currentBuilder.sections[sectionId].push(menuId);
+  renderBuilderSections();
 };
-function normalizeEvents(dayData){
-  if(!Array.isArray(dayData.events)){
-    const lines=String(dayData.schedule||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    dayData.events=lines.map(text=>({text,color:'white'}));
+
+window.removeFromSection = (sectionId,index)=>{
+  currentBuilder.sections[sectionId].splice(index,1);
+  renderBuilderSections();
+};
+
+window.moveItem = (sectionId,index,dir)=>{
+  const arr = currentBuilder.sections[sectionId];
+  const ni = index+dir;
+  if(ni<0 || ni>=arr.length) return;
+  [arr[index],arr[ni]]=[arr[ni],arr[index]];
+  renderBuilderSections();
+};
+
+function loadBuilderDate(date){
+  const stored = days[date];
+  currentBuilder = stored ? JSON.parse(JSON.stringify(stored)) : blankDay();
+  document.getElementById("dayTheme").value=currentBuilder.theme||"";
+  document.getElementById("dayNotes").value=currentBuilder.notes||"";
+  renderBuilderSections();
+}
+
+document.getElementById("builderDate").addEventListener("change",e=>loadBuilderDate(e.target.value));
+document.getElementById("dayTheme").addEventListener("input",e=>currentBuilder.theme=e.target.value);
+document.getElementById("dayNotes").addEventListener("input",e=>currentBuilder.notes=e.target.value);
+
+document.getElementById("saveDay").addEventListener("click",()=>{
+  const date=document.getElementById("builderDate").value;
+  if(!date) return alert("日付を選択してください");
+  currentBuilder.theme=document.getElementById("dayTheme").value.trim();
+  currentBuilder.notes=document.getElementById("dayNotes").value.trim();
+  days[date]=JSON.parse(JSON.stringify(currentBuilder));
+  saveAll();
+  alert("練習内容を保存しました");
+});
+
+document.getElementById("copyPrevious").addEventListener("click",()=>{
+  const dateStr=document.getElementById("builderDate").value;
+  if(!dateStr) return alert("日付を選択してください");
+  const d=new Date(dateStr+"T00:00:00"); d.setDate(d.getDate()-1);
+  const prev=d.toISOString().slice(0,10);
+  if(!days[prev]) return alert("前日の練習データがありません");
+  currentBuilder=JSON.parse(JSON.stringify(days[prev]));
+  currentBuilder.theme=(currentBuilder.theme ? currentBuilder.theme+"（コピー）":"");
+  document.getElementById("dayTheme").value=currentBuilder.theme;
+  document.getElementById("dayNotes").value=currentBuilder.notes||"";
+  renderBuilderSections();
+});
+
+document.getElementById("deleteDay").addEventListener("click",()=>{
+  const date=document.getElementById("builderDate").value;
+  if(!date || !days[date]) return alert("削除するデータがありません");
+  if(confirm(`${formatDate(date)}の練習を削除しますか？`)){
+    delete days[date];
+    currentBuilder=blankDay();
+    saveAll();
+    loadBuilderDate(date);
   }
-  dayData.events=dayData.events
-    .filter(e=>e&&typeof e.text==='string')
-    .map(e=>({text:e.text,color:EVENT_COLORS[e.color]?e.color:'white'}));
-  while(dayData.events.length<4) dayData.events.push({text:'',color:'white'});
+});
+
+function dayHTML(date,day){
+  if(!day) return `<div class="empty">${formatDate(date)}の練習は未作成です</div>`;
+  const blocks = SECTIONS.map(s=>{
+    const ids=day.sections?.[s.id]||[];
+    if(!ids.length) return "";
+    const li=ids.map(id=>{
+      const m=menus.find(x=>x.id===id);
+      return m ? `<li><strong>${esc(m.name)}</strong>${m.detail?` — ${esc(m.detail)}`:""}</li>` : "";
+    }).join("");
+    return `<div class="calendar-group"><b>${esc(s.label)}</b><ul>${li}</ul></div>`;
+  }).join("");
+  return `<div>
+    <h2>${formatDate(date)}</h2>
+    ${day.theme?`<p><strong>テーマ：</strong>${esc(day.theme)}</p>`:""}
+    ${blocks || `<div class="empty">メニュー未設定</div>`}
+    ${day.notes?`<p><strong>連絡事項：</strong>${esc(day.notes)}</p>`:""}
+  </div>`;
 }
-function syncScheduleFromEvents(dayData){
-  normalizeEvents(dayData);
-  dayData.schedule=dayData.events.map(e=>e.text.trim()).filter(Boolean).join('\n');
+
+function renderToday(){
+  const date=document.getElementById("todayDate").value;
+  document.getElementById("todayContent").innerHTML=dayHTML(date,days[date]);
+  const sorted=Object.keys(days).sort().reverse();
+  document.getElementById("calendarList").innerHTML=sorted.length ? sorted.map(d=>`<div class="calendar-day">
+    ${dayHTML(d,days[d])}
+    <div class="actions no-print">
+      <button class="btn btn-secondary btn-small" onclick="openDay('${d}')">編集</button>
+      <button class="btn btn-primary btn-small" onclick="showDay('${d}')">表示</button>
+    </div>
+  </div>`).join("") : `<div class="empty">まだ練習日は作成されていません</div>`;
 }
-function masterTodoOptions(selectedId=''){
-  let html='<option value="">TODOリストから選択</option>';
-  (todosDB.items||[]).filter(t=>!t.done).forEach(t=>{
-    html+=`<option value="${t.id}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.text||'(未入力)')}</option>`;
+
+window.openDay=(date)=>{
+  document.getElementById("builderDate").value=date;
+  loadBuilderDate(date);
+  navTo("builder");
+};
+window.showDay=(date)=>{
+  document.getElementById("todayDate").value=date;
+  renderToday();
+  window.scrollTo({top:0});
+};
+
+document.getElementById("todayDate").addEventListener("change",renderToday);
+document.getElementById("editSelectedDay").addEventListener("click",()=>openDay(document.getElementById("todayDate").value));
+document.getElementById("printDay").addEventListener("click",()=>{
+  document.getElementById("view-today").classList.add("print-target");
+  window.print();
+  setTimeout(()=>document.getElementById("view-today").classList.remove("print-target"),300);
+});
+
+function countDayMenus(day){
+  return SECTIONS.reduce((sum,s)=>sum+(day?.sections?.[s.id]?.length||0),0);
+}
+
+function renderStats(){
+  document.getElementById("statMenus").textContent=menus.length;
+  document.getElementById("statDays").textContent=Object.keys(days).length;
+  document.getElementById("statToday").textContent=countDayMenus(days[todayISO()]);
+}
+
+document.getElementById("saveMenu").addEventListener("click",()=>{
+  const id=document.getElementById("editMenuId").value;
+  const name=document.getElementById("menuName").value.trim();
+  if(!name) return alert("メニュー名を入力してください");
+  const item={
+    id:id||crypto.randomUUID(),
+    name,
+    category:document.getElementById("menuCategory").value,
+    placement:document.getElementById("menuPlacement").value,
+    detail:document.getElementById("menuDetail").value.trim(),
+    sets:document.getElementById("menuSets").value.trim(),
+    intensity:document.getElementById("menuIntensity").value.trim(),
+    rest:document.getElementById("menuRest").value.trim(),
+    duration:document.getElementById("menuDuration").value.trim(),
+    target:document.getElementById("menuTarget").value.trim(),
+    caution:document.getElementById("menuCaution").value.trim()
+  };
+  if(id){
+    const i=menus.findIndex(m=>m.id===id);
+    if(i>=0) menus[i]=item;
+  }else{
+    menus.push(item);
+  }
+  saveAll();
+  resetMenuForm();
+  navTo("menus");
+});
+
+function resetMenuForm(){
+  ["editMenuId","menuName","menuDetail","menuSets","menuIntensity","menuRest","menuDuration","menuTarget","menuCaution"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("menuCategory").value=CATEGORIES[0];
+  document.getElementById("menuPlacement").value="middle";
+  document.getElementById("registerTitle").textContent="メニュー登録";
+}
+document.getElementById("resetMenuForm").addEventListener("click",resetMenuForm);
+
+window.editMenu=(id)=>{
+  const m=menus.find(x=>x.id===id);
+  if(!m) return;
+  document.getElementById("editMenuId").value=m.id;
+  document.getElementById("menuName").value=m.name;
+  document.getElementById("menuCategory").value=m.category;
+  document.getElementById("menuPlacement").value=m.placement;
+  document.getElementById("menuDetail").value=m.detail||"";
+  document.getElementById("menuSets").value=m.sets||"";
+  document.getElementById("menuIntensity").value=m.intensity||"";
+  document.getElementById("menuRest").value=m.rest||"";
+  document.getElementById("menuDuration").value=m.duration||"";
+  document.getElementById("menuTarget").value=m.target||"";
+  document.getElementById("menuCaution").value=m.caution||"";
+  document.getElementById("registerTitle").textContent="メニュー編集";
+  navTo("register");
+};
+
+window.removeMenu=(id)=>{
+  const m=menus.find(x=>x.id===id);
+  if(!m) return;
+  if(confirm(`「${m.name}」を削除しますか？`)){
+    menus=menus.filter(x=>x.id!==id);
+    Object.values(days).forEach(day=>{
+      SECTIONS.forEach(s=>{
+        day.sections[s.id]=(day.sections[s.id]||[]).filter(mid=>mid!==id);
+      });
+    });
+    saveAll();
+  }
+};
+
+["menuCategoryFilter","menuSearch"].forEach(id=>document.getElementById(id).addEventListener("input",renderMenuList));
+["builderCategoryFilter","builderSearch"].forEach(id=>document.getElementById(id).addEventListener("input",renderBuilderLibrary));
+
+function renderAll(){
+  renderMenuList();
+  renderBuilderLibrary();
+  renderBuilderSections();
+  renderToday();
+  renderStats();
+}
+
+function setDbStatus(text,state=""){
+  document.getElementById("dbStatus").textContent=text;
+  const dot=document.getElementById("dbDot");
+  dot.className="db-dot"+(state?` ${state}`:"");
+}
+
+function isFirebaseConfigured(){
+  return window.FIREBASE_CONFIG &&
+    window.FIREBASE_CONFIG.apiKey &&
+    !String(window.FIREBASE_CONFIG.apiKey).includes("ここに");
+}
+
+async function initializeCloud(){
+  if(!isFirebaseConfigured()){
+    firebaseReady=false;
+    setDbStatus("未接続・端末保存","offline");
+    document.getElementById("saveState").textContent="端末内に自動保存";
+    return;
+  }
+
+  try{
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    auth=firebase.auth();
+    firestore=firebase.firestore();
+    firebaseReady=true;
+    setDbStatus("ログイン待ち");
+
+    auth.onAuthStateChanged(user=>{
+      currentUser=user;
+      const overlay=document.getElementById("loginOverlay");
+      const logout=document.getElementById("logoutButton");
+
+      if(user){
+        overlay.classList.add("hidden");
+        logout.style.display="";
+        setDbStatus("クラウド接続","online");
+        document.getElementById("saveState").textContent=user.email || "ログイン済み";
+        startStateListener();
+      }else{
+        if(unsubscribeState){unsubscribeState();unsubscribeState=null;}
+        overlay.classList.remove("hidden");
+        logout.style.display="none";
+        setDbStatus("ログイン待ち");
+      }
+    });
+  }catch(error){
+    console.error(error);
+    firebaseReady=false;
+    setDbStatus("接続エラー","offline");
+    document.getElementById("saveState").textContent="端末保存で動作中";
+  }
+}
+
+function startStateListener(){
+  if(!firestore || !currentUser) return;
+  if(unsubscribeState) unsubscribeState();
+
+  unsubscribeState=firestore.doc(STATE_DOC_PATH).onSnapshot(async snap=>{
+    if(snap.exists){
+      const data=snap.data();
+      menus=Array.isArray(data.menus) ? data.menus : starterMenus;
+      days=data.days && typeof data.days==="object" ? data.days : {};
+      localStorage.setItem("trackMenus",JSON.stringify(menus));
+      localStorage.setItem("trackDays",JSON.stringify(days));
+      loadBuilderDate(document.getElementById("builderDate").value);
+      renderAll();
+    }else{
+      await firestore.doc(STATE_DOC_PATH).set({
+        menus,
+        days,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy:currentUser.email || currentUser.uid
+      });
+    }
+  },error=>{
+    console.error(error);
+    setDbStatus("読込エラー","offline");
   });
-  return html;
 }
-function linkOrCreateTodo(todo){
-  const text=String(todo.text||'').trim();
-  if(!text){todo.todoId=null;return}
-  if(todo.todoId){
-    const linked=todosDB.items.find(t=>t.id===todo.todoId);
-    if(linked){linked.text=text;linked.done=!!todo.checked;return}
-    todo.todoId=null;
+
+async function signIn(){
+  const email=document.getElementById("loginEmail").value.trim();
+  const password=document.getElementById("loginPassword").value;
+  const msg=document.getElementById("loginMessage");
+  if(!email || !password){msg.textContent="メールアドレスとパスワードを入力してください。";return;}
+  try{
+    msg.textContent="ログイン中…";
+    await auth.signInWithEmailAndPassword(email,password);
+    msg.textContent="";
+  }catch(error){
+    msg.textContent="ログインできませんでした。入力内容またはFirebase設定を確認してください。";
   }
-  let found=todosDB.items.find(t=>!t.done&&String(t.text||'').trim()===text);
-  if(!found){
-    found={id:newTodoId(),text,done:!!todo.checked};
-    todosDB.items.push(found);
+}
+
+async function registerAccount(){
+  const email=document.getElementById("loginEmail").value.trim();
+  const password=document.getElementById("loginPassword").value;
+  const msg=document.getElementById("loginMessage");
+  if(!email || password.length<6){msg.textContent="メールアドレスと6文字以上のパスワードを入力してください。";return;}
+  try{
+    msg.textContent="アカウント作成中…";
+    await auth.createUserWithEmailAndPassword(email,password);
+    msg.textContent="";
+  }catch(error){
+    msg.textContent="アカウントを作成できませんでした。既存アカウントや設定を確認してください。";
   }
-  todo.todoId=found.id;
 }
 
-
-    function autoResizeTextarea(el) {
-      el.style.height = 'auto';
-      const min = 101;
-      const line = 24;
-      const needed = Math.max(min, el.scrollHeight);
-      const snapped = Math.ceil((needed - 5) / line) * line + 5;
-      el.style.height = snapped + 'px';
-    }
-
-    function getMondayOf(dateStr) {
-      const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
-      const day = d.getDay();
-      const diff = (day === 0 ? -6 : 1 - day);
-      d.setDate(d.getDate() + diff);
-      return d;
-    }
-
-    function fmtDateInput(d) {
-      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    }
-
-    function emptyWeek() {
-      return {
-        days: Array.from({length: 7}, () => ({
-          schedule: '',
-          todos: Array.from({length: 4}, () => ({ checked: false, text: '', todoId: null }))
-        })),
-        memo: ''
-      };
-    }
-
-    function newTodoId() {
-      return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
-
-    // ---- Databases (in-memory mirrors of storage) ----
-    let weeksDB = {};              // keyed by week start date (YYYY-MM-DD)
-    let todosDB = { items: [] };   // master TODO database (grows; never auto-trimmed)
-    let currentWeekStart = fmtDateInput(getMondayOf(null));
-    let printWeeks = 1;            // how many weeks to print
-    let saveTimer = null;
-    let lastUserEditAt = 0;
-    let isPulling = false;
-
-    function currentWeek() {
-      if (!weeksDB[currentWeekStart]) weeksDB[currentWeekStart] = emptyWeek();
-      const w = weeksDB[currentWeekStart];
-      // normalize
-      if (!Array.isArray(w.days) || w.days.length !== 7) w.days = emptyWeek().days;
-      w.days.forEach(d => {
-        normalizeEvents(d);
-        if (!Array.isArray(d.todos)) d.todos = [];
-        while (d.todos.length < 4) d.todos.push({ checked: false, text: '', todoId: null });
-        d.todos.forEach(t => {
-          if (typeof t.text !== 'string') t.text = '';
-          if (t.todoId === undefined) t.todoId = null;
-          if (typeof t.checked !== 'boolean') t.checked = false;
-        });
-      });
-      if (typeof w.memo !== 'string') w.memo = '';
-      return w;
-    }
-
-    // Always show exactly 20 rows in the TODO list: unchecked items first (kept in DB),
-    // padded with blanks. Checked items stay in the DB but disappear from the visible list.
-    function visibleTodos() {
-      const active = todosDB.items.filter(t => !t.done);
-      const rows = active.slice(0, 20);
-      while (rows.length < 20) rows.push(null);
-      return rows;
-    }
-
-    async function loadDB() {
-      try {
-        if (window.storage && typeof window.storage.get === 'function') {
-          try {
-            const w = await window.storage.get(WEEKS_KEY, false);
-            if (w && w.value) weeksDB = JSON.parse(w.value) || {};
-          } catch (e) { /* no weeks yet */ }
-          try {
-            const t = await window.storage.get(TODOS_KEY, false);
-            if (t && t.value) todosDB = JSON.parse(t.value) || { items: [] };
-          } catch (e) { /* no todos yet */ }
-        }
-      } catch (e) { /* storage unavailable */ }
-      if (!todosDB || !Array.isArray(todosDB.items)) todosDB = { items: [] };
-      if (!weeksDB || typeof weeksDB !== 'object') weeksDB = {};
-      render();
-    }
-
-    function scheduleSave() {
-      lastUserEditAt = Date.now();
-      const indicator = document.getElementById('saveIndicator');
-      indicator.textContent = '編集中...';
-      if (saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveDB, 600);
-    }
-
-    async function saveDB() {
-      const indicator = document.getElementById('saveIndicator');
-      if (!window.storage || typeof window.storage.set !== 'function') {
-        indicator.textContent = 'この画面内でのみ保持されます（自動保存は利用できません）';
-        return;
-      }
-      try {
-        await window.storage.set(WEEKS_KEY, JSON.stringify(weeksDB), false);
-        await window.storage.set(TODOS_KEY, JSON.stringify(todosDB), false);
-        indicator.textContent = 'データベースに保存しました';
-        setTimeout(() => {
-          if (indicator.textContent === 'データベースに保存しました') indicator.textContent = '';
-        }, 1800);
-        scheduleCloudPush();
-      } catch (e) {
-        console.error('storage save error:', e);
-        indicator.textContent = '保存に失敗しました（もう一度お試しください）';
-      }
-    }
-
-    function computeDayMeta(weekStart) {
-      const monday = new Date(weekStart + 'T00:00:00');
-      const metas = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        metas.push({
-          label: `${d.getMonth()+1}/${d.getDate()}`,
-          dow: DOW_JP[d.getDay()],
-          isSat: d.getDay() === 6,
-          isSun: d.getDay() === 0
-        });
-      }
-      return metas;
-    }
-
-    function todoOptionsHtml(selectedId) {
-      let html = '<option value="">（直接入力／未選択）</option>';
-      todosDB.items.filter(t => !t.done).forEach(t => {
-        const sel = t.id === selectedId ? ' selected' : '';
-        html += `<option value="${t.id}"${sel}>${escapeHtml(t.text) || '(未入力)'}</option>`;
-      });
-      return html;
-    }
-
-    function render() {
-      const week = currentWeek();
-      const startD = new Date(currentWeekStart + 'T00:00:00');
-      const endD = new Date(startD);
-      endD.setDate(startD.getDate() + 6);
-      document.getElementById('startDateLabel').textContent =
-        `${startD.getFullYear()}/${pad(startD.getMonth()+1)}/${pad(startD.getDate())}`;
-      document.getElementById('endDateInput').value = fmtDateInput(endD);
-      document.getElementById('memoText').value = week.memo;
-
-      const metas = computeDayMeta(currentWeekStart);
-
-      // Schedule column
-      const dayColumn = document.getElementById('dayColumn');
-      dayColumn.innerHTML = '';
-      metas.forEach((meta, i) => {
-        const row = document.createElement('div');
-        const rowDate = new Date(startD);
-        rowDate.setDate(startD.getDate() + i);
-        const today = new Date();
-        const isToday =
-          rowDate.getFullYear() === today.getFullYear() &&
-          rowDate.getMonth() === today.getMonth() &&
-          rowDate.getDate() === today.getDate();
-        row.className = 'day-row' + (isToday ? ' today' : '');
-        const labelClass = meta.isSat ? 'day-label sat' : (meta.isSun ? 'day-label sun' : 'day-label');
-        normalizeEvents(week.days[i]);
-        row.innerHTML = `
-          <div class="${labelClass}">
-            <span class="date-num">${meta.label}</span>
-            <span class="dow-jp">(${meta.dow})</span>
-          </div>
-          <div class="day-content">
-            <div class="event-lines"></div>
-          </div>
-        `;
-        dayColumn.appendChild(row);
-        const lines=row.querySelector('.event-lines');
-        week.days[i].events.forEach((event,eventIndex)=>{
-          const line=document.createElement('div');
-          line.className='event-line';
-          line.dataset.color=event.color;
-          line.innerHTML=`
-            ${colorPickerHtml(event.color)}
-            <input class="event-text" type="text" placeholder="">
-          `;
-          const picker=line.querySelector('.color-picker');
-          const input=line.querySelector('.event-text');
-          input.value=event.text;
-          setupColorPicker(picker,color=>{
-            event.color=color;
-            line.dataset.color=color;
-            syncScheduleFromEvents(week.days[i]);
-            scheduleSave();
-          });
-          input.addEventListener('input',e=>{
-            event.text=e.target.value;
-            syncScheduleFromEvents(week.days[i]);
-            scheduleSave();
-          });
-          lines.appendChild(line);
-        });
-      });
-
-      // In-table TODO column: text input + dropdown from TODO DB
-      const dayTodoColumn = document.getElementById('dayTodoColumn');
-      dayTodoColumn.innerHTML = '';
-      metas.forEach((meta, i) => {
-        const cell = document.createElement('div');
-        cell.className = 'day-todo-cell';
-        week.days[i].todos.forEach((todo, j) => {
-          const row = document.createElement('div');
-          row.className = 'mini-check';
-          row.innerHTML = `
-            <input type="checkbox" ${todo.checked ? 'checked' : ''}>
-            <input type="text" class="mini-text" placeholder="TODO">
-            <select class="mini-pick">${todoOptionsHtml(todo.todoId)}</select>
-          `;
-          const checkbox = row.querySelector('input[type="checkbox"]');
-          const textInput = row.querySelector('.mini-text');
-          const select = row.querySelector('.mini-pick');
-          textInput.value = todo.text || '';
-
-          checkbox.addEventListener('change', (e) => {
-            todo.checked = e.target.checked;
-            // Reflect completion back into the TODO DB if it came from there
-            if (todo.todoId) {
-              const dbItem = todosDB.items.find(t => t.id === todo.todoId);
-              if (dbItem) dbItem.done = e.target.checked;
-            }
-            scheduleSave();
-            render();
-          });
-
-          textInput.addEventListener('input', (e) => {
-            todo.text = e.target.value;
-            if(todo.todoId){
-              const linked=todosDB.items.find(t=>t.id===todo.todoId);
-              if(linked) linked.text=todo.text;
-            }
-            scheduleSave();
-          });
-          textInput.addEventListener('blur',()=>{
-            linkOrCreateTodo(todo);
-            scheduleSave();
-            render();
-          });
-
-          select.addEventListener('change', (e) => {
-            const id = e.target.value;
-            if (!id) {
-              todo.todoId = null;
-            } else {
-              const dbItem = todosDB.items.find(t => t.id === id);
-              if (dbItem) {
-                todo.todoId = dbItem.id;
-                todo.text = dbItem.text;
-                textInput.value = dbItem.text;
-              }
-            }
-            scheduleSave();
-          });
-
-          cell.appendChild(row);
-        });
-        dayTodoColumn.appendChild(cell);
-      });
-
-      // Master TODO list: always 20 visible rows; checked items vanish from view but stay in DB
-      const masterBody = document.getElementById('masterTodoBody');
-      masterBody.innerHTML = '';
-      visibleTodos().forEach((item, i) => {
-        const row = document.createElement('div');
-        row.className = 'todo-item';
-        row.innerHTML = `<span class="num">${i+1}</span><input type="checkbox"><input type="text" value="">`;
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        const text = row.querySelector('input[type="text"]');
-        text.value = item ? item.text : '';
-
-        checkbox.addEventListener('change', () => {
-          if (item) {
-            item.done = true;    // stays in DB, disappears from the visible list
-            scheduleSave();
-            render();
-          } else {
-            checkbox.checked = false;
-          }
-        });
-
-        text.addEventListener('input', (e) => {
-          const val = e.target.value;
-          if (item) {
-            item.text = val;
-          } else if (val.trim()) {
-            const created = { id: newTodoId(), text: val, done: false };
-            todosDB.items.push(created);
-            scheduleSave();
-            render();
-            // keep focus on the newly created row
-            const inputs = masterBody.querySelectorAll('input[type="text"]');
-            if (inputs[i]) { inputs[i].focus(); inputs[i].setSelectionRange(val.length, val.length); }
-            return;
-          }
-          scheduleSave();
-        });
-
-        masterBody.appendChild(row);
-      });
-
-      // Completed TODO list: unchecking sends the item back to the active list
-      const doneBody = document.getElementById('doneTodoBody');
-      doneBody.innerHTML = '';
-      const doneItems = todosDB.items.filter(t => t.done);
-      if (doneItems.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'done-empty';
-        empty.textContent = '完了したTODOはまだありません';
-        doneBody.appendChild(empty);
-      } else {
-        doneItems.forEach((item, i) => {
-          const row = document.createElement('div');
-          row.className = 'todo-item';
-          row.innerHTML = `<span class="num">${i+1}</span><input type="checkbox" checked><input type="text" value="">`;
-          const checkbox = row.querySelector('input[type="checkbox"]');
-          const text = row.querySelector('input[type="text"]');
-          text.value = item.text;
-
-          checkbox.addEventListener('change', () => {
-            item.done = false;   // restore to the active TODO list
-            scheduleSave();
-            render();
-          });
-          text.addEventListener('input', (e) => {
-            item.text = e.target.value;
-            scheduleSave();
-          });
-
-          doneBody.appendChild(row);
-        });
-      }
-    }
-
-    document.getElementById('endDateInput').addEventListener('change', (e) => {
-      const endD = new Date(e.target.value + 'T00:00:00');
-      const startD = new Date(endD);
-      startD.setDate(endD.getDate() - 6);
-      currentWeekStart = fmtDateInput(startD);
-      render();
-      scheduleSave();
-    });
-
-    document.getElementById('todayBtn').addEventListener('click',()=>{
-      currentWeekStart=fmtDateInput(getMondayOf(null));
-      render();
-      scheduleSave();
-    });
-
-    document.getElementById('memoText').addEventListener('input', (e) => {
-      currentWeek().memo = e.target.value;
-      scheduleSave();
-    });
-    document.getElementById('printBtn').addEventListener('click', doPrint);
-    document.getElementById('optWeek').addEventListener('change', (e) => {
-      document.getElementById('printWeeksInput').disabled = !e.target.checked;
-    });
-    document.getElementById('tabSchedule').addEventListener('click', () => switchTab('schedule'));
-    document.getElementById('tabTodo').addEventListener('click', () => switchTab('todo'));
-    document.getElementById('tabDone').addEventListener('click', () => switchTab('done'));
-
-    function switchTab(name) {
-      const pages = { schedule: 'pageSchedule', todo: 'pageTodo', done: 'pageDone' };
-      const tabs  = { schedule: 'tabSchedule',  todo: 'tabTodo',  done: 'tabDone'  };
-      Object.keys(pages).forEach(k => {
-        document.getElementById(pages[k]).classList.toggle('active', k === name);
-        document.getElementById(tabs[k]).classList.toggle('active', k === name);
-      });
-    }
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      if (confirm('この週の入力内容をクリアしますか？（TODOデータベースは残ります）')) {
-        weeksDB[currentWeekStart] = emptyWeek();
-        render();
-        saveDB();
-      }
-    });
-
-    // ---- Printing: clone the live DOM for each week so the print output is
-    //      pixel-identical to the on-screen layout (same markup, same classes). ----
-    function makePrintSheet(innerNodes) {
-      const sheet = document.createElement('div');
-      sheet.className = 'print-sheet';
-      innerNodes.forEach(n => sheet.appendChild(n));
-      return sheet;
-    }
-
-    function cloneHeaderFor(weekStart) {
-      const header = document.querySelector('.header').cloneNode(true);
-      const bar = document.querySelector('.accent-bar').cloneNode(true);
-
-      const startD = new Date(weekStart + 'T00:00:00');
-      const endD = new Date(startD);
-      endD.setDate(startD.getDate() + 6);
-
-      const startLabel = header.querySelector('#startDateLabel, .start-date');
-      if (startLabel) {
-        startLabel.removeAttribute('id');
-        startLabel.textContent =
-          `${startD.getFullYear()}/${pad(startD.getMonth()+1)}/${pad(startD.getDate())}`;
-      }
-      const endInput = header.querySelector('#endDateInput, input[type="date"]');
-      if (endInput) {
-        // Replace the date picker with plain text so print shows no widget chrome
-        const span = document.createElement('span');
-        span.className = 'start-date';
-        span.textContent =
-          `${endD.getFullYear()}/${pad(endD.getMonth()+1)}/${pad(endD.getDate())}`;
-        endInput.parentNode.replaceChild(span, endInput);
-      }
-      return [header, bar];
-    }
-
-    function stripForPrint(root) {
-      // Placeholders must not appear on paper
-      root.querySelectorAll('[placeholder]').forEach(el => el.removeAttribute('placeholder'));
-      // Dropdown pickers are an on-screen affordance only
-      root.querySelectorAll('.mini-pick').forEach(el => el.remove());
-      return root;
-    }
-
-    function buildWeekPage(weekStart) {
-      // Temporarily point the live app at this week, render, then clone the result.
-      const saved = currentWeekStart;
-      currentWeekStart = weekStart;
-      render();
-
-      const nodes = cloneHeaderFor(weekStart);
-      const pageClone = document.getElementById('pageSchedule').cloneNode(true);
-      pageClone.removeAttribute('id');
-      pageClone.className = 'page-schedule';
-      stripForPrint(pageClone);
-
-      currentWeekStart = saved;
-      return makePrintSheet([...nodes, pageClone]);
-    }
-
-    function buildTodoPage() {
-      render();
-      const pageClone = document.getElementById('pageTodo').cloneNode(true);
-      pageClone.removeAttribute('id');
-      pageClone.className = 'page-todo';
-      stripForPrint(pageClone);
-      return makePrintSheet([pageClone]);
-    }
-
-    function buildDonePage() {
-      render();
-      const pageClone = document.getElementById('pageDone').cloneNode(true);
-      pageClone.removeAttribute('id');
-      pageClone.className = 'page-todo';
-      stripForPrint(pageClone);
-      return makePrintSheet([pageClone]);
-    }
-
-    function doPrint() {
-      const wantWeek = document.getElementById('optWeek').checked;
-      const wantTodo = document.getElementById('optTodo').checked;
-      const wantDone = document.getElementById('optDone').checked;
-
-      if (!wantWeek && !wantTodo && !wantDone) {
-        alert('印刷する項目を1つ以上選んでください。');
-        return;
-      }
-
-      const n = Math.max(1, Math.min(12, parseInt(document.getElementById('printWeeksInput').value, 10) || 1));
-      const container = document.getElementById('printArea');
-      container.innerHTML = '';
-
-      if (wantWeek) {
-        let ws = new Date(currentWeekStart + 'T00:00:00');
-        for (let k = 0; k < n; k++) {
-          container.appendChild(buildWeekPage(fmtDateInput(ws)));
-          ws.setDate(ws.getDate() + 7);
-        }
-      }
-      if (wantTodo) container.appendChild(buildTodoPage());
-      if (wantDone) container.appendChild(buildDonePage());
-
-      render(); // restore the live view to the selected week
-      window.print();
-    }
-
-    // ================= GitHub Gist sync =================
-    const GH_KEY = 'planner2-github-cfg-v1';   // { token, gistId }
-    const GIST_FILE = 'route-planner2-data.json';
-    let ghCfg = { token: '', gistId: '' };
-    let pushTimer = null;
-
-    function syncMsg(text, kind) {
-      const el = document.getElementById('syncMsg');
-      el.textContent = text;
-      el.className = 'sync-msg' + (kind ? ' ' + kind : '');
-    }
-
-    function setSyncDot(on) {
-      const dot = document.getElementById('syncStatusDot');
-      dot.className = 'dot ' + (on ? 'on' : 'off');
-    }
-
-    async function loadGhCfg() {
-      try {
-        if (window.storage && typeof window.storage.get === 'function') {
-          const r = await window.storage.get(GH_KEY, false);
-          if (r && r.value) ghCfg = Object.assign(ghCfg, JSON.parse(r.value));
-        }
-      } catch (e) { /* not configured yet */ }
-      document.getElementById('ghToken').value = ghCfg.token || '';
-      document.getElementById('ghGist').value  = ghCfg.gistId || '';
-      setSyncDot(!!ghCfg.token);
-    }
-
-    async function saveGhCfg() {
-      try {
-        if (window.storage && typeof window.storage.set === 'function') {
-          await window.storage.set(GH_KEY, JSON.stringify(ghCfg), false);
-        }
-      } catch (e) { /* ignore */ }
-      setSyncDot(!!ghCfg.token);
-    }
-
-    function readGhInputs() {
-      ghCfg.token  = document.getElementById('ghToken').value.trim();
-      ghCfg.gistId = document.getElementById('ghGist').value.trim();
-    }
-
-    function ghHeaders() {
-      return {
-        'Authorization': 'Bearer ' + ghCfg.token,
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json'
-      };
-    }
-
-    function snapshot() {
-      return JSON.stringify({
-        version: 1,
-        updatedAt: new Date().toISOString(),
-        weeks: weeksDB,
-        todos: todosDB
-      }, null, 2);
-    }
-
-    async function pushToGist(silent) {
-      readGhInputs();
-      if (!ghCfg.token) { if (!silent) syncMsg('GitHubトークンを入力してください', 'err'); return; }
-
-      if (!silent) syncMsg('クラウドに保存中...');
-      const body = {
-        description: '進路相談室 ROUTE - 別ユーザー用週間プランナー2 データ',
-        public: false,
-        files: { [GIST_FILE]: { content: snapshot() } }
-      };
-
-      try {
-        let res;
-        if (ghCfg.gistId) {
-          res = await fetch('https://api.github.com/gists/' + ghCfg.gistId, {
-            method: 'PATCH', headers: ghHeaders(), body: JSON.stringify(body)
-          });
-        } else {
-          res = await fetch('https://api.github.com/gists', {
-            method: 'POST', headers: ghHeaders(), body: JSON.stringify(body)
-          });
-        }
-
-        if (!res.ok) {
-          const t = await res.text();
-          syncMsg(`保存に失敗しました (${res.status})。トークンの権限（gist）をご確認ください。`, 'err');
-          console.error('gist push failed:', res.status, t);
-          return;
-        }
-
-        const data = await res.json();
-        if (!ghCfg.gistId) {
-          ghCfg.gistId = data.id;
-          document.getElementById('ghGist').value = data.id;
-        }
-        await saveGhCfg();
-        syncMsg('クラウドに保存しました（' + new Date().toLocaleTimeString('ja-JP') + '）', 'ok');
-      } catch (e) {
-        console.error(e);
-        syncMsg('通信に失敗しました。ネット接続をご確認ください。', 'err');
-      }
-    }
-
-    async function pullFromGist() {
-      readGhInputs();
-      if (!ghCfg.token)  { syncMsg('GitHubトークンを入力してください', 'err'); return; }
-      if (!ghCfg.gistId) { syncMsg('Gist IDを入力してください（初回はまず「クラウドへ保存」）', 'err'); return; }
-
-      syncMsg('クラウドから読込中...');
-      isPulling = true;
-      try {
-        const res = await fetch('https://api.github.com/gists/' + ghCfg.gistId, { headers: ghHeaders() });
-        if (!res.ok) {
-          syncMsg(`読込に失敗しました (${res.status})。トークンとGist IDをご確認ください。`, 'err');
-          return;
-        }
-        const data = await res.json();
-        const file = data.files && data.files[GIST_FILE];
-        if (!file) { syncMsg('データファイルが見つかりません', 'err'); return; }
-
-        let content = file.content;
-        if (file.truncated && file.raw_url) {
-          content = await (await fetch(file.raw_url)).text();
-        }
-
-        const parsed = JSON.parse(content);
-        if (parsed.weeks) weeksDB = parsed.weeks;
-        if (parsed.todos && Array.isArray(parsed.todos.items)) todosDB = parsed.todos;
-
-        await saveGhCfg();
-        await saveDB();       // mirror into this device's local storage
-        render();
-        const when = parsed.updatedAt ? new Date(parsed.updatedAt).toLocaleString('ja-JP') : '';
-        syncMsg('クラウドから読み込みました' + (when ? '（保存日時: ' + when + '）' : ''), 'ok');
-      } catch (e) {
-        console.error(e);
-        syncMsg('通信に失敗しました。ネット接続をご確認ください。', 'err');
-      } finally {
-        isPulling = false;
-      }
-    }
-
-    function scheduleCloudPush() {
-      if (isPulling) return;
-      if (!ghCfg.token || !ghCfg.gistId) return;   // only auto-sync once connected
-      if (pushTimer) clearTimeout(pushTimer);
-      pushTimer = setTimeout(() => pushToGist(true), 4000);
-    }
-
-    document.getElementById('syncToggle').addEventListener('click', () => {
-      document.querySelector('.sync-panel').classList.toggle('open');
-    });
-
-    // 入力したトークンとGist IDを、その場で端末に保存する
-    document.getElementById('ghToken').addEventListener('input', async () => {
-      readGhInputs();
-      await saveGhCfg();
-      syncMsg('接続情報をこの端末に保存しました', 'ok');
-    });
-    document.getElementById('ghGist').addEventListener('input', async () => {
-      readGhInputs();
-      await saveGhCfg();
-      syncMsg('接続情報をこの端末に保存しました', 'ok');
-    });
-    document.getElementById('btnPush').addEventListener('click', () => pushToGist(false));
-    document.getElementById('btnPull').addEventListener('click', pullFromGist);
-    document.getElementById('btnForget').addEventListener('click', async () => {
-      if (!confirm('この端末からGitHubの接続情報を削除しますか？（クラウド上のデータは残ります）')) return;
-      ghCfg = { token: '', gistId: '' };
-      document.getElementById('ghToken').value = '';
-      document.getElementById('ghGist').value = '';
-      await saveGhCfg();
-      syncMsg('接続を解除しました');
-    });
-
-    async function autoPullIfReady() {
-      readGhInputs();
-      if (!ghCfg.token || !ghCfg.gistId || !navigator.onLine || isPulling) return;
-      if (Date.now() - lastUserEditAt < 10000) return;
-      await pullFromGist();
-    }
-
-    async function initializePlanner() {
-      await loadGhCfg();
-      await loadDB();
-      await autoPullIfReady();
-      setInterval(autoPullIfReady, 30000);
-    }
-
-    window.addEventListener('online', autoPullIfReady);
-    window.addEventListener('focus', autoPullIfReady);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') autoPullIfReady();
-    });
-
-
-    // ===== Google Calendar one-way sync + 30-second auto sync =====
-    const GOOGLE_CFG_KEY='planner-google-calendar-cfg-v1';
-    const GOOGLE_SCOPE='https://www.googleapis.com/auth/calendar.events';
-    const GOOGLE_AUTO_SYNC_MS=30000;
-    const GOOGLE_LOGIN_HINT='yuko.iphone@gmail.com';
-
-    let googleTokenClient=null;
-    let googleAccessToken='';
-    let googleTokenExpiresAt=0;
-    let googleSyncInProgress=false;
-    let googleAutoSyncTimer=null;
-    let googleReconnectNoticeShown=false;
-
-    function gmsg(t,k=''){
-      const e=document.getElementById('googleSyncMsg');
-      e.textContent=t;
-      e.className='google-sync-msg'+(k?' '+k:'');
-    }
-
-    function saveGoogleClientId(){
-      localStorage.setItem(
-        GOOGLE_CFG_KEY,
-        document.getElementById('googleClientId').value.trim()
-      );
-    }
-
-    function loadGoogleClientId(){
-      document.getElementById('googleClientId').value=
-        localStorage.getItem(GOOGLE_CFG_KEY)||'';
-    }
-
-    function hasValidGoogleToken(){
-      return !!googleAccessToken && Date.now() < googleTokenExpiresAt;
-    }
-
-    function clearGoogleToken(){
-      googleAccessToken='';
-      googleTokenExpiresAt=0;
-    }
-
-    function initGoogle(){
-      saveGoogleClientId();
-      const clientId=document.getElementById('googleClientId').value.trim();
-
-      if(!clientId){
-        gmsg('OAuthクライアントIDを入力してください','err');
-        return false;
-      }
-
-      if(!window.google||!google.accounts||!google.accounts.oauth2){
-        gmsg('Google認証を読み込めません。通信状態を確認してください','err');
-        return false;
-      }
-
-      googleTokenClient=google.accounts.oauth2.initTokenClient({
-        client_id:clientId,
-        scope:GOOGLE_SCOPE,
-        login_hint:GOOGLE_LOGIN_HINT,
-        callback:()=>{}
-      });
-      return true;
-    }
-
-    function authGoogle(){
-      return new Promise((resolve,reject)=>{
-        if(!initGoogle()){
-          reject(new Error('Google認証の初期化に失敗しました'));
-          return;
-        }
-
-        googleTokenClient.callback=r=>{
-          if(r.error){
-            clearGoogleToken();
-            reject(new Error(r.error));
-            return;
-          }
-
-          googleAccessToken=r.access_token;
-          const expiresIn=Math.max(60,Number(r.expires_in)||3600);
-          googleTokenExpiresAt=Date.now()+(expiresIn*1000)-60000;
-          googleReconnectNoticeShown=false;
-          resolve(r.access_token);
-        };
-
-        // Googleの仕様上、初回接続や期限切れ後の再接続には
-        // ユーザー操作が必要です。
-        // 以前に許可済みなら同意画面を強制せず、妻のアカウントを優先します。
-        // Googleの仕様上、期限切れ後はボタン操作が必要な場合があります。
-        googleTokenClient.requestAccessToken({prompt:''});
-      });
-    }
-
-    function addDays2(d,n){
-      const x=new Date(d);
-      x.setDate(x.getDate()+n);
-      return x;
-    }
-
-    function dkey(d){
-      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    }
-
-    function collectGoogleEvents(){
-      const start=new Date(currentWeekStart+'T00:00:00');
-      const days=document.getElementById('googleSyncRange').value==='year'?365:7;
-      const end=addDays2(start,days);
-      const out=[];
-
-      for(let d=new Date(start);d<end;d=addDays2(d,1)){
-        const monday=getMondayOf(dkey(d));
-        const weekKey=fmtDateInput(monday);
-        const idx=(d.getDay()+6)%7;
-        const w=weeksDB[weekKey];
-
-        if(!w||!w.days||!w.days[idx]) continue;
-
-        const schedule=String(w.days[idx].schedule||'').trim();
-        if(!schedule) continue;
-
-        const summary=schedule.split(/\r?\n/).find(Boolean)||'予定';
-        out.push({
-          date:dkey(d),
-          summary:summary.slice(0,120),
-          description:schedule,
-          key:'route-'+dkey(d)
-        });
-      }
-      return out;
-    }
-
-    async function gapi(url,opt={}){
-      const r=await fetch(url,{
-        ...opt,
-        headers:{
-          Authorization:'Bearer '+googleAccessToken,
-          'Content-Type':'application/json',
-          ...(opt.headers||{})
-        }
-      });
-
-      if(!r.ok){
-        const err=new Error('Google Calendar API エラー '+r.status);
-        err.status=r.status;
-        throw err;
-      }
-
-      return r.status===204?null:r.json();
-    }
-
-    async function existingManaged(start,end){
-      const q=new URLSearchParams({
-        timeMin:start.toISOString(),
-        timeMax:end.toISOString(),
-        singleEvents:'true',
-        privateExtendedProperty:'routePlannerManaged=true',
-        maxResults:'2500'
-      });
-
-      const data=await gapi(
-        'https://www.googleapis.com/calendar/v3/calendars/primary/events?'+q
-      );
-      return data.items||[];
-    }
-
-    async function syncGoogle(options={}){
-      const {auto=false}=options;
-
-      if(googleSyncInProgress) return false;
-      if(!navigator.onLine){
-        if(!auto) gmsg('オフラインのため同期できません','err');
-        return false;
-      }
-
-      if(!hasValidGoogleToken()){
-        if(auto){
-          if(!googleReconnectNoticeShown){
-            gmsg('Google自動同期待機中：Googleに再接続してください','err');
-            googleReconnectNoticeShown=true;
-          }
-          return false;
-        }
-        await authGoogle();
-      }
-
-      googleSyncInProgress=true;
-
-      try{
-        if(!auto) gmsg('同期準備中…');
-
-        const items=collectGoogleEvents();
-        const checkedAt=new Date().toLocaleTimeString('ja-JP');
-
-        const syncStart=new Date(currentWeekStart+'T00:00:00');
-        const syncDays=document.getElementById('googleSyncRange').value==='year'?365:7;
-        const start=syncStart;
-        const end=addDays2(syncStart,syncDays+1);
-
-        const existing=await existingManaged(start,end);
-        const map=new Map();
-
-        existing.forEach(e=>{
-          const k=e.extendedProperties
-            &&e.extendedProperties.private
-            &&e.extendedProperties.private.routePlannerKey;
-          if(k) map.set(k,e);
-        });
-
-        let add=0;
-        let upd=0;
-        let del=0;
-
-        const desiredKeys=new Set(items.map(item=>item.key));
-
-        for(const item of items){
-          const body={
-            summary:item.summary,
-            description:item.description+'\n\n週間プランナーから同期',
-            start:{date:item.date},
-            end:{date:dkey(addDays2(new Date(item.date+'T00:00:00'),1))},
-            extendedProperties:{
-              private:{
-                routePlannerManaged:'true',
-                routePlannerKey:item.key
-              }
-            }
-          };
-
-          const old=map.get(item.key);
-
-          if(old){
-            await gapi(
-              'https://www.googleapis.com/calendar/v3/calendars/primary/events/'
-              +encodeURIComponent(old.id),
-              {method:'PATCH',body:JSON.stringify(body)}
-            );
-            upd++;
-          }else{
-            await gapi(
-              'https://www.googleapis.com/calendar/v3/calendars/primary/events',
-              {method:'POST',body:JSON.stringify(body)}
-            );
-            add++;
-          }
-        }
-
-        // 週間プランナーから消えた予定は、Google側でも削除する。
-        // 対象は routePlannerManaged=true の予定だけなので、
-        // Googleカレンダーへ直接入力した家族の予定は削除しない。
-        for(const managedEvent of existing){
-          const key=managedEvent.extendedProperties
-            &&managedEvent.extendedProperties.private
-            &&managedEvent.extendedProperties.private.routePlannerKey;
-
-          if(key && !desiredKeys.has(key)){
-            await gapi(
-              'https://www.googleapis.com/calendar/v3/calendars/primary/events/'
-              +encodeURIComponent(managedEvent.id),
-              {method:'DELETE'}
-            );
-            del++;
-          }
-        }
-
-        const mode=auto?'自動同期':'同期';
-        gmsg(
-          `${mode}完了：新規${add}件、更新${upd}件、削除${del}件（${checkedAt}）`,
-          'ok'
-        );
-        return true;
-
-      }catch(e){
-        console.error(e);
-
-        if(e.status===401||e.status===403){
-          clearGoogleToken();
-          googleReconnectNoticeShown=true;
-          gmsg('Googleの接続期限が切れました。「Googleに接続」を押してください','err');
-        }else{
-          gmsg(e.message||'同期に失敗しました','err');
-        }
-        return false;
-
-      }finally{
-        googleSyncInProgress=false;
-      }
-    }
-
-    async function autoSyncGoogleIfReady(){
-      if(document.visibilityState==='hidden') return;
-      if(!navigator.onLine||googleSyncInProgress) return;
-
-      const clientId=document.getElementById('googleClientId').value.trim();
-      if(!clientId) return;
-
-      await syncGoogle({auto:true});
-    }
-
-    function startGoogleAutoSync(){
-      if(googleAutoSyncTimer) clearInterval(googleAutoSyncTimer);
-      googleAutoSyncTimer=setInterval(
-        autoSyncGoogleIfReady,
-        GOOGLE_AUTO_SYNC_MS
-      );
-
-      // ページ表示後、Google接続済みならすぐ同期
-      setTimeout(autoSyncGoogleIfReady,1500);
-    }
-
-    document.getElementById('googleSyncToggle').onclick=()=>{
-      document.querySelector('.google-sync-panel').classList.toggle('open');
-    };
-
-    document.getElementById('googleClientId').addEventListener('input',()=>{
-      saveGoogleClientId();
-      clearGoogleToken();
-      googleReconnectNoticeShown=false;
-      gmsg('クライアントIDを保存しました。Googleに接続してください');
-    });
-
-    document.getElementById('googleConnectBtn').onclick=async()=>{
-      try{
-        gmsg('接続中…');
-        await authGoogle();
-        gmsg('Googleに接続しました。自動同期を開始します','ok');
-        await syncGoogle({auto:true});
-      }catch(e){
-        gmsg(e.message||'接続に失敗しました','err');
-      }
-    };
-
-    document.getElementById('googleSyncBtn').onclick=()=>{
-      syncGoogle({auto:false});
-    };
-
-
-    async function saveAndSyncAll(){
-      const saveBtn=document.getElementById('saveBtn');
-      const indicator=document.getElementById('saveIndicator');
-      const originalText=saveBtn.textContent;
-
-      if(saveBtn.disabled) return;
-
-      saveBtn.disabled=true;
-      saveBtn.textContent='保存中…';
-      indicator.textContent='端末・クラウド・Googleカレンダーへ保存しています…';
-
-      try{
-        // 1. 端末内へ保存
-        await saveDB();
-
-        // 2. GitHub Gistへ即時保存（接続済みの場合）
-        readGhInputs();
-        if(ghCfg.token&&ghCfg.gistId&&navigator.onLine){
-          if(pushTimer){
-            clearTimeout(pushTimer);
-            pushTimer=null;
-          }
-          await pushToGist(true);
-        }
-
-        // 3. Googleカレンダーへ同期
-        const clientId=document.getElementById('googleClientId').value.trim();
-        if(clientId&&navigator.onLine){
-          const googleOk=await syncGoogle({auto:false});
-          if(!googleOk){
-            indicator.textContent='端末とGitHubには保存しました。Googleは再接続が必要です';
-            return;
-          }
-        }
-
-        indicator.textContent='すべて保存・同期しました';
-        setTimeout(()=>{
-          if(indicator.textContent==='すべて保存・同期しました'){
-            indicator.textContent='';
-          }
-        },2500);
-
-      }catch(e){
-        console.error(e);
-        indicator.textContent='保存または同期に失敗しました。接続状態を確認してください';
-      }finally{
-        saveBtn.disabled=false;
-        saveBtn.textContent=originalText;
-      }
-    }
-
-    document.getElementById('saveBtn').addEventListener('click',saveAndSyncAll);
-
-    window.addEventListener('online',autoSyncGoogleIfReady);
-    window.addEventListener('focus',autoSyncGoogleIfReady);
-    document.addEventListener('visibilitychange',()=>{
-      if(document.visibilityState==='visible'){
-        autoSyncGoogleIfReady();
-      }
-    });
-
-    loadGoogleClientId();
-    startGoogleAutoSync();
-
-    initializePlanner();
-
-    const requestedView = new URLSearchParams(window.location.search).get('view');
-    if (requestedView === 'todo' || requestedView === 'done') {
-      switchTab(requestedView);
-    }
-  </script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
-}
+document.getElementById("loginButton").addEventListener("click",signIn);
+document.getElementById("registerAccountButton").addEventListener("click",registerAccount);
+document.getElementById("logoutButton").addEventListener("click",()=>auth?.signOut());
+
+fillSelects();
+document.getElementById("todayDate").value=todayISO();
+document.getElementById("builderDate").value=todayISO();
+loadBuilderDate(todayISO());
+renderAll();
+initializeCloud();
 </script>
-
 </body>
 </html>
