@@ -1,0 +1,91 @@
+﻿@echo off
+chcp 65001 >nul
+setlocal
+
+echo ==========================================
+echo IBURI FAMILY Calendar - GitHub Upload
+echo Repository: Calendar
+echo ==========================================
+echo.
+
+where git >nul 2>&1
+if errorlevel 1 (
+  echo [エラー] Gitが見つかりません。
+  echo GitHub Desktopをインストールして、GitHubへログインしてください。
+  pause
+  exit /b 1
+)
+
+if not exist ".git" (
+  echo [エラー] このフォルダはGitリポジトリではありません。
+  echo.
+  echo GitHub DesktopでCalendarリポジトリを開き、
+  echo Repository ^> Show in Explorer で開いたフォルダへ、
+  echo このZIP内の4ファイルをコピーしてください。
+  pause
+  exit /b 1
+)
+
+for /f "delims=" %%R in ('git remote get-url origin 2^>nul') do set REMOTE=%%R
+if not defined REMOTE (
+  echo [エラー] originが設定されていません。
+  pause
+  exit /b 1
+)
+
+echo 接続先: %REMOTE%
+echo %REMOTE% | findstr /i /r "/Calendar\.git$ /Calendar$" >nul
+if errorlevel 1 (
+  echo.
+  echo [警告] 接続先がCalendarリポジトリではない可能性があります。
+  choice /M "このまま続けますか"
+  if errorlevel 2 exit /b 1
+)
+
+for %%F in (index.html monthly_calendar.html annual_calendar.html service-worker.js) do (
+  if not exist "%%F" (
+    echo [エラー] %%F が見つかりません。
+    pause
+    exit /b 1
+  )
+)
+
+echo.
+echo 変更内容:
+git status --short
+echo.
+
+git add index.html monthly_calendar.html annual_calendar.html service-worker.js service-worker.js
+
+git diff --cached --quiet
+if not errorlevel 1 (
+  echo 変更はありません。アップロード不要です。
+  pause
+  exit /b 0
+)
+
+git commit -m "Update IBURI FAMILY calendar"
+if errorlevel 1 (
+  echo [エラー] コミットに失敗しました。
+  pause
+  exit /b 1
+)
+
+for /f "delims=" %%B in ('git branch --show-current') do set BRANCH=%%B
+if not defined BRANCH set BRANCH=main
+
+echo.
+echo GitHubへアップロードしています...
+git push origin %BRANCH%
+if errorlevel 1 (
+  echo.
+  echo [エラー] Pushに失敗しました。
+  echo GitHub Desktopでログイン状態とリポジトリ接続を確認してください。
+  pause
+  exit /b 1
+)
+
+echo.
+echo [完了] Calendarリポジトリへアップロードしました。
+echo GitHub Pagesへの反映には少し時間がかかる場合があります。
+pause
