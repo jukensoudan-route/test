@@ -66,6 +66,30 @@ main{max-width:1200px;margin:auto;padding:14px}
   .color-picker.open .color-palette{display:flex}
   .color-choice{width:25px;height:25px;border:1px solid rgba(0,0,0,.14);border-radius:5px;padding:0;cursor:pointer}
   .color-choice.selected{outline:2px solid #263238;outline-offset:1px}
+  .color-palette.floating-palette{
+    position:fixed!important;
+    display:flex!important;
+    flex-direction:column!important;
+    left:auto;right:auto;top:auto;bottom:auto;
+    z-index:5000!important;
+    gap:5px!important;
+    padding:6px!important;
+    width:auto!important;
+    max-width:none!important;
+    background:#fff!important;
+    border:1px solid #cfd9dd!important;
+    border-radius:9px!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.24)!important;
+    overflow:visible!important;
+  }
+  .color-palette.floating-palette .color-choice{
+    display:block!important;
+    width:30px!important;
+    height:30px!important;
+    min-width:30px!important;
+    min-height:30px!important;
+    flex:0 0 30px!important;
+  }
 
 .event-edit-row input{flex:1;border:1px solid #cfd9dd;border-radius:6px;padding:7px;font:12px inherit}
 .todo-row select{flex:1;border:1px solid #cfd9dd;border-radius:6px;padding:7px;font:11px inherit}
@@ -643,13 +667,63 @@ function colorPickerHtml(color='white'){
     </div>
   </div>`;
 }
+function closeColorPicker(picker){
+  if(!picker) return;
+  picker.classList.remove('open');
+  const palette=picker._floatingPalette || picker.querySelector('.color-palette');
+  if(palette){
+    palette.classList.remove('floating-palette');
+    palette.style.removeProperty('left');
+    palette.style.removeProperty('top');
+    palette.style.removeProperty('right');
+    palette.style.removeProperty('bottom');
+    if(palette.parentNode!==picker) picker.appendChild(palette);
+  }
+  picker._floatingPalette=null;
+}
+function positionColorPalette(picker){
+  const tile=picker.querySelector('.color-tile');
+  const palette=picker._floatingPalette || picker.querySelector('.color-palette');
+  if(!tile||!palette) return;
+  if(palette.parentNode!==document.body) document.body.appendChild(palette);
+  picker._floatingPalette=palette;
+  palette.classList.add('floating-palette');
+
+  const r=tile.getBoundingClientRect();
+  const vv=window.visualViewport;
+  const viewportLeft=vv ? vv.offsetLeft : 0;
+  const viewportTop=vv ? vv.offsetTop : 0;
+  const viewportWidth=vv ? vv.width : document.documentElement.clientWidth;
+  const viewportHeight=vv ? vv.height : document.documentElement.clientHeight;
+  const gap=8, margin=8;
+  const paletteWidth=palette.offsetWidth || 42;
+  const paletteHeight=palette.offsetHeight || 178;
+
+  let left=viewportLeft+r.right+gap;
+  const rightLimit=viewportLeft+viewportWidth-margin;
+  if(left+paletteWidth>rightLimit) left=viewportLeft+r.left-gap-paletteWidth;
+  left=Math.max(viewportLeft+margin,Math.min(left,rightLimit-paletteWidth));
+
+  let top=viewportTop+r.top+(r.height-paletteHeight)/2;
+  const bottomLimit=viewportTop+viewportHeight-margin;
+  top=Math.max(viewportTop+margin,Math.min(top,bottomLimit-paletteHeight));
+
+  palette.style.setProperty('left',Math.round(left)+'px','important');
+  palette.style.setProperty('top',Math.round(top)+'px','important');
+  palette.style.setProperty('right','auto','important');
+  palette.style.setProperty('bottom','auto','important');
+}
 function setupColorPicker(picker,onChange){
   const tile=picker.querySelector('.color-tile');
   const choices=[...picker.querySelectorAll('.color-choice')];
   tile.addEventListener('click',e=>{
     e.stopPropagation();
-    document.querySelectorAll('.color-picker.open').forEach(p=>{if(p!==picker)p.classList.remove('open')});
-    picker.classList.toggle('open');
+    const willOpen=!picker.classList.contains('open');
+    document.querySelectorAll('.color-picker.open').forEach(p=>{if(p!==picker)closeColorPicker(p)});
+    if(willOpen){
+      picker.classList.add('open');
+      requestAnimationFrame(()=>positionColorPalette(picker));
+    }else closeColorPicker(picker);
   });
   choices.forEach(btn=>btn.addEventListener('click',e=>{
     e.stopPropagation();
@@ -657,11 +731,17 @@ function setupColorPicker(picker,onChange){
     picker.dataset.color=color;
     tile.dataset.color=color;
     choices.forEach(x=>x.classList.toggle('selected',x===btn));
-    picker.classList.remove('open');
+    closeColorPicker(picker);
     if(onChange) onChange(color);
   }));
 }
-document.addEventListener('click',()=>document.querySelectorAll('.color-picker.open').forEach(p=>p.classList.remove('open')));
+document.addEventListener('click',()=>document.querySelectorAll('.color-picker.open').forEach(closeColorPicker));
+window.addEventListener('resize',()=>document.querySelectorAll('.color-picker.open').forEach(positionColorPalette));
+window.addEventListener('scroll',()=>document.querySelectorAll('.color-picker.open').forEach(positionColorPalette),true);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',()=>document.querySelectorAll('.color-picker.open').forEach(positionColorPalette));
+  window.visualViewport.addEventListener('scroll',()=>document.querySelectorAll('.color-picker.open').forEach(positionColorPalette));
+}
 
 const EVENT_COLORS={
   white:{label:'',hex:'#ffffff'},
@@ -980,7 +1060,7 @@ function openEdit(d){
   });
   document.getElementById('modal').classList.add('open');
 }
-function closeEdit(){document.getElementById('modal').classList.remove('open');selectedDate=null}
+function closeEdit(){document.querySelectorAll('.color-picker.open').forEach(closeColorPicker);document.getElementById('modal').classList.remove('open');selectedDate=null}
 document.getElementById('cancelBtn').onclick=closeEdit;
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeEdit()});
 document.getElementById('saveBtn').onclick=async()=>{
