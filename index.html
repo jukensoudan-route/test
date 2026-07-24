@@ -1,17 +1,12 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
-&lt;!-- v2.0.4.29: one stylesheet, one app script, no service-worker registration --&gt;
-
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IBURI FAMILY</title>
 <!-- v2.0.4.27: 週間入力のDOM直接保存・保存競合防止 -->
-
-<style id="app-styles">
-/* ===== base ===== */
-:root {
+<style>
+  :root {
     --blue: #2491d6;
     --blue-light: #2ea0e8;
     --teal: #1ac6b2;
@@ -1293,16 +1288,46 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;}
   .bottom-nav>a,.bottom-nav>button,.tabs.bottom-nav>a,.tabs.bottom-nav>button{font-size:10px!important;padding:5px 1px!important;}
 }
 
+</style>
 
-/* ===== base ===== */
+<script>
+if (!window.storage) {
+  window.storage = {
+    async get(key) {
+      const value = localStorage.getItem(key);
+      if (value === null) throw new Error('not found');
+      return { value };
+    },
+    async set(key, value) {
+      localStorage.setItem(key, value);
+      return { value };
+    }
+  };
+}
+</script>
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#1ac6b2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="IBURI FAMILY">
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<style>
 /* v18: 下部バーを「保存｜週間｜月間｜年間｜Todo｜完了」の横1列に固定 */
 .bottom-nav,.tabs.bottom-nav{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;grid-template-rows:1fr!important;grid-auto-flow:column!important;grid-auto-columns:minmax(0,1fr)!important;flex-wrap:nowrap!important;align-items:stretch!important;}
 .bottom-nav>a,.bottom-nav>button,.tabs.bottom-nav>a,.tabs.bottom-nav>button{grid-column:auto!important;grid-row:1!important;width:auto!important;min-width:0!important;min-height:48px!important;margin:0!important;white-space:nowrap!important;}
 .bottom-nav #bottomSaveBtn,.tabs.bottom-nav #bottomSaveBtn{grid-column:1!important;grid-row:1!important;min-height:48px!important;margin:0!important;border-radius:10px!important;font-size:13px!important;letter-spacing:0!important;transform:none!important;}
 @media screen and (max-width:430px){.bottom-nav,.tabs.bottom-nav{gap:2px!important}.bottom-nav>a,.bottom-nav>button,.tabs.bottom-nav>a,.tabs.bottom-nav>button{min-height:44px!important;padding:5px 0!important;font-size:10px!important}.bottom-nav #bottomSaveBtn,.tabs.bottom-nav #bottomSaveBtn{font-size:11px!important}}
+</style>
 
-
-/* ===== bottom-nav-v20-final ===== */
+<style id="bottom-nav-v20-final">
 /* v20: 3ページ共通の下部ナビゲーション最終指定 */
 html,body{overflow-x:hidden;}
 body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
@@ -1392,9 +1417,9 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
   body{padding-bottom:0!important;}
   .tabs.bottom-nav,.bottom-nav{display:none!important;}
 }
+</style>
 
-
-/* ===== weekly-print-v204-final ===== */
+<style id="weekly-print-v204-final">
 /* v2.0.4.12: 週間印刷・行高均等拡張・下余白8mm */
 .datebox{
   display:grid!important;
@@ -1706,9 +1731,10 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
     outline:none!important;
   }
 }
+</style>
 
 
-/* ===== weekly-print-unified-v204-final ===== */
+<style id="weekly-print-unified-v204-final">
 @media print{
   .page-schedule .unified-week-body{display:block!important;width:100%!important;}
   .page-schedule .unified-week-body .unified-day-row:first-child{border-top:.35mm solid #a9bac9!important;}
@@ -1832,9 +1858,10 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
     text-overflow:ellipsis!important;
   }
 }
+</style>
 
 
-/* ===== date-column-narrow-v20413 ===== */
+<style id="date-column-narrow-v20413">
 /* v2.0.4.13: 入力画面・印刷画面の日付列を縮小し、予定列を拡張 */
 @media screen {
   .unified-day-row{
@@ -1912,9 +1939,9 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
     grid-template-columns:18mm minmax(0,1fr) 46mm!important;
   }
 }
+</style>
 
-
-/* ===== print-layout-auto-v20416 ===== */
+<style id="print-layout-auto-v20416">
 /* v2.0.4.16: A5印刷の残り高さをMEMOへ自動配分。下余白5mm固定、罫線5等分 */
 @media print{
   @page{size:A5 portrait;margin:0!important;}
@@ -1990,9 +2017,9 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
     background-position:0 0!important;
   }
 }
+</style>
 
-
-/* ===== toolbar-v20421-final ===== */
+<style id="toolbar-v20421-final">
 /* v2.0.4.21: 上部操作欄の文字・表示を確定 */
 .week-control-card .week-range-inline .label{display:none!important;}
 .week-control-card .range-inputs{overflow:visible!important;}
@@ -2054,9 +2081,9 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
 }
 .week-move-row #prevWeekBtn{grid-column:1!important;}
 .week-move-row #nextWeekBtn{grid-column:2!important;}
+</style>
 
-
-/* ===== print-multipage-v20423-final ===== */
+<style id="print-multipage-v20423-final">
 @media print{
   html,body{
     width:148mm!important;
@@ -2105,195 +2132,174 @@ body{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important;}
   }
 }
 </style>
-<link href="apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
-<link href="favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
-<link href="favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
-<link href="favicon.ico" rel="shortcut icon"/>
-<link href="site.webmanifest" rel="manifest"/>
-<meta content="#1ac6b2" name="theme-color"/>
-<meta content="yes" name="apple-mobile-web-app-capable"/>
-<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
-<meta content="IBURI FAMILY" name="apple-mobile-web-app-title"/>
-<script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
-
-
-
-
-
-
-
 
 </head>
 <body>
-<div class="sheet">
-<div class="header">
-<div class="title">
-<span>
+  <div class="sheet">
+    <div class="header">
+      <div class="title">
+        <span>
           IBURI FAMILY
           <span class="sub">週間スケジュール ・ 共通TODO ・ メモ</span>
-</span>
+        </span>
+      </div>
+      <div class="datebox stacked-toolbar">
+        <div class="week-control-card">
+          <div class="field range week-range-inline">
+            <div class="range-inputs">
+              <span class="start-date" id="startDateLabel"></span>
+              <span class="range-sep">〜</span>
+              <input type="date" id="endDateInput">
+            </div>
+          </div>
+          <div class="week-move-row">
+            <button id="prevWeekBtn" class="week-nav-btn" type="button">← 前の週</button>
+            <button id="nextWeekBtn" class="week-nav-btn" type="button">次の週 →</button>
+          </div>
+        </div>
+        <div class="print-controls" aria-label="印刷設定">
+          <button id="printBtn" class="top-print-btn" type="button">印刷</button>
+          <select id="printWeekCount" class="print-week-count" aria-label="印刷する週の数">
+            <option value="1" selected>1週間</option>
+            <option value="2">2週間</option>
+            <option value="3">3週間</option>
+            <option value="4">4週間</option>
+            <option value="5">5週間</option>
+            <option value="6">6週間</option>
+            <option value="8">8週間</option>
+            <option value="12">12週間</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="accent-bar"></div>
+
+    <div class="tabs bottom-nav">
+  <button type="button" id="bottomSaveBtn">保存</button>
+  <button class="tab-btn active" id="tabSchedule">週間</button>
+  <a class="calendar-link" href="monthly_calendar.html">月間</a>
+  <a class="calendar-link" href="annual_calendar.html">年間</a>
+  <button class="tab-btn" id="tabTodo">Todo</button>
+  <button class="tab-btn" id="tabDone">完了</button>
 </div>
-<div class="datebox stacked-toolbar">
-<div class="week-control-card">
-<div class="field range week-range-inline">
-<div class="range-inputs">
-<span class="start-date" id="startDateLabel"></span>
-<span class="range-sep">〜</span>
-<input id="endDateInput" type="date"/>
+
+    <div class="page active" id="pageSchedule">
+      <div class="content-row">
+        <div class="planner-table">
+          <div class="table-header">
+            <div class="col-header date">日</div>
+            <div class="col-header schedule">予定</div>
+            <div class="col-header todo">TODO</div>
+          </div>
+          <div class="table-body unified-week-body" id="weeklyRows"></div>
+        </div>
+      </div>
+
+<div class="family-legend" aria-label="予定色の説明">
+  <span><i data-color="white"></i>予定なし</span>
+  <span><i data-color="blue"></i>パパ</span>
+  <span><i data-color="orange"></i>ママ</span>
+  <span><i data-color="purple"></i>蒼一郎</span>
+  <span><i data-color="pink"></i>かのこ</span>
 </div>
-</div>
-<div class="week-move-row">
-<button class="week-nav-btn" id="prevWeekBtn" type="button">← 前の週</button>
-<button class="week-nav-btn" id="nextWeekBtn" type="button">次の週 →</button>
-</div>
-</div>
-<div aria-label="印刷設定" class="print-controls">
-<button class="top-print-btn" id="printBtn" type="button">印刷</button>
-<select aria-label="印刷する週の数" class="print-week-count" id="printWeekCount">
-<option selected="" value="1">1週間</option>
-<option value="2">2週間</option>
-<option value="3">3週間</option>
-<option value="4">4週間</option>
-<option value="5">5週間</option>
-<option value="6">6週間</option>
-<option value="8">8週間</option>
-<option value="12">12週間</option>
-</select>
-</div>
-</div>
-</div>
-<div class="accent-bar"></div>
-<div class="tabs bottom-nav">
-<button id="bottomSaveBtn" type="button">保存</button>
-<button class="tab-btn active" id="tabSchedule">週間</button>
-<a class="calendar-link" href="monthly_calendar.html">月間</a>
-<a class="calendar-link" href="annual_calendar.html">年間</a>
-<button class="tab-btn" id="tabTodo">Todo</button>
-<button class="tab-btn" id="tabDone">完了</button>
-</div>
-<div class="page active" id="pageSchedule">
-<div class="content-row">
-<div class="planner-table">
-<div class="table-header">
-<div class="col-header date">日</div>
-<div class="col-header schedule">予定</div>
-<div class="col-header todo">TODO</div>
-</div>
-<div class="table-body unified-week-body" id="weeklyRows"></div>
-</div>
-</div>
-<div aria-label="予定色の説明" class="family-legend">
-<span><i data-color="white"></i>予定なし</span>
-<span><i data-color="blue"></i>パパ</span>
-<span><i data-color="orange"></i>ママ</span>
-<span><i data-color="purple"></i>蒼一郎</span>
-<span><i data-color="pink"></i>かのこ</span>
-</div>
-<div class="memo">
-<div class="memo-header">MEMO</div>
-<div class="memo-body-wrap">
-<textarea id="memoText" placeholder=""></textarea>
-</div>
-</div>
-</div>
-<div class="page-brand" id="brandPage1">進路相談室 ROUTE</div>
-<div class="page" id="pageTodo">
-<div class="master-todo">
-<div class="master-todo-header">TODOリスト（20項目）</div>
-<div class="master-todo-body" id="masterTodoBody"></div>
-</div>
-</div>
-<div class="page-brand" id="brandPage2">進路相談室 ROUTE</div>
-<div class="page" id="pageDone">
-<div class="master-todo">
-<div class="master-todo-header done">完了したTODO（チェックを外すと戻ります）</div>
-<div class="master-todo-body" id="doneTodoBody"></div>
-</div>
-</div>
-<div class="footer">
-<div class="brand">進路相談室 ROUTE</div>
-<div class="tagline">すべての家庭に、進路の地図を。</div>
-</div>
-<div class="sync-panel">
-<button class="sync-toggle" id="syncToggle">
-<span class="dot off" id="syncStatusDot"></span>
+      <div class="memo">
+        <div class="memo-header">MEMO</div>
+        <div class="memo-body-wrap">
+          <textarea id="memoText" placeholder=""></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="page-brand" id="brandPage1">進路相談室 ROUTE</div>
+
+    <div class="page" id="pageTodo">
+      <div class="master-todo">
+        <div class="master-todo-header">TODOリスト（20項目）</div>
+        <div class="master-todo-body" id="masterTodoBody"></div>
+      </div>
+    </div>
+    <div class="page-brand" id="brandPage2">進路相談室 ROUTE</div>
+
+    <div class="page" id="pageDone">
+      <div class="master-todo">
+        <div class="master-todo-header done">完了したTODO（チェックを外すと戻ります）</div>
+        <div class="master-todo-body" id="doneTodoBody"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="brand">進路相談室 ROUTE</div>
+      <div class="tagline">すべての家庭に、進路の地図を。</div>
+    </div>
+
+    <div class="sync-panel">
+      <button class="sync-toggle" id="syncToggle">
+        <span id="syncStatusDot" class="dot off"></span>
         クラウド同期（GitHub）
         <span class="chev">▾</span>
-</button>
-<div class="sync-body" id="syncBody">
-<p class="sync-help">
-          スマホとPCで同じデータを使うための設定です。<br/>
+      </button>
+
+      <div class="sync-body" id="syncBody">
+        <p class="sync-help">
+          スマホとPCで同じデータを使うための設定です。<br>
           トークンはこの端末内にのみ保存され、外部には送信されません（GitHub以外には通信しません）。
         </p>
-<label class="sync-field">
-<span>GitHubトークン</span>
-<input autocomplete="off" id="ghToken" placeholder="ghp_ ... （gist権限のみ）" type="password"/>
-</label>
-<label class="sync-field">
-<span>Gist ID（空欄なら新規作成）</span>
-<input autocomplete="off" id="ghGist" placeholder="例: 3f8a1c... " type="text"/>
-</label>
-<div class="sync-actions">
-<button id="btnPush">この端末 → クラウドへ保存</button>
-<button id="btnPull">クラウド → この端末へ読込</button>
-<button class="danger" id="btnForget">接続を解除</button>
-</div>
-<div class="sync-msg" id="syncMsg"></div>
-</div>
-</div>
-<div class="google-sync-panel">
-<button class="google-sync-toggle" id="googleSyncToggle">Googleカレンダー連携 ▾</button>
-<div class="google-sync-body">
-<p style="font-size:10px;line-height:1.6;color:#8a9ba3;margin:0 0 8px">
+
+        <label class="sync-field">
+          <span>GitHubトークン</span>
+          <input type="password" id="ghToken" placeholder="ghp_ ... （gist権限のみ）" autocomplete="off">
+        </label>
+
+        <label class="sync-field">
+          <span>Gist ID（空欄なら新規作成）</span>
+          <input type="text" id="ghGist" placeholder="例: 3f8a1c... " autocomplete="off">
+        </label>
+
+        <div class="sync-actions">
+          <button id="btnPush">この端末 → クラウドへ保存</button>
+          <button id="btnPull">クラウド → この端末へ読込</button>
+          <button id="btnForget" class="danger">接続を解除</button>
+        </div>
+        <div class="sync-msg" id="syncMsg"></div>
+      </div>
+    </div>
+
+
+    <div class="google-sync-panel">
+      <button class="google-sync-toggle" id="googleSyncToggle">Googleカレンダー連携 ▾</button>
+      <div class="google-sync-body">
+        <p style="font-size:10px;line-height:1.6;color:#8a9ba3;margin:0 0 8px">
           週間プランナーの予定をGoogleカレンダーへ追加・更新します。
         </p>
-<label class="google-sync-field">
-<span>Google OAuth クライアントID</span>
-<input id="googleClientId" placeholder="xxxx.apps.googleusercontent.com" type="text"/>
-</label>
-<label class="google-sync-field">
-<span>同期期間</span>
-<select id="googleSyncRange">
-<option value="week">表示中の1週間</option>
-<option value="year">表示中の週から1年間</option>
-</select>
-</label>
-<div class="google-sync-actions">
-<button id="googleConnectBtn">Googleに接続</button>
-<button class="primary" id="googleSyncBtn">Googleカレンダーへ同期</button>
-</div>
-<div class="google-sync-msg" id="googleSyncMsg"></div>
-</div>
-</div>
-<div class="toolbar">
-<button class="primary" id="saveBtn">保存する</button>
-<button id="resetBtn">クリア</button>
-</div>
-<div class="save-indicator" id="saveIndicator"></div>
-</div>
-<div id="printArea"></div>
+        <label class="google-sync-field">
+          <span>Google OAuth クライアントID</span>
+          <input id="googleClientId" type="text" placeholder="xxxx.apps.googleusercontent.com">
+        </label>
+        <label class="google-sync-field">
+          <span>同期期間</span>
+          <select id="googleSyncRange">
+            <option value="week">表示中の1週間</option>
+            <option value="year">表示中の週から1年間</option>
+          </select>
+        </label>
+        <div class="google-sync-actions">
+          <button id="googleConnectBtn">Googleに接続</button>
+          <button id="googleSyncBtn" class="primary">Googleカレンダーへ同期</button>
+        </div>
+        <div id="googleSyncMsg" class="google-sync-msg"></div>
+      </div>
+    </div>
 
+    <div class="toolbar">
+      <button class="primary" id="saveBtn">保存する</button>
+      <button id="resetBtn">クリア</button>
+    </div>
+    <div class="save-indicator" id="saveIndicator"></div>
+  </div>
 
+  <div id="printArea"></div>
 
-<script id="app-script">/* ===== Storage compatibility ===== */
-
-if (!window.storage) {
-  window.storage = {
-    async get(key) {
-      const value = localStorage.getItem(key);
-      if (value === null) throw new Error('not found');
-      return { value };
-    },
-    async set(key, value) {
-      localStorage.setItem(key, value);
-      return { value };
-    }
-  };
-}
-
-/* ===== Main application ===== */
-
-const DOW_JP = ['日','月','火','水','木','金','土'];
+  <script>
+    const DOW_JP = ['日','月','火','水','木','金','土'];
     const WEEKS_KEY = 'planner2-weeks-db-v1';   // { "2026-07-13": { days:[...], memo:"" }, ... }
     const TODOS_KEY = 'planner2-todos-db-v1';
     const WEEKS_BACKUP_KEY = 'planner2-weeks-db-backup-v1';   // { items: [ {id, text, done} ] }
@@ -3822,9 +3828,11 @@ function getHolidayName(d){ return japaneseHolidays(d.getFullYear()).get(dateKey
     }, 5000);
 
     initializePlanner();
+  </script>
 
-/* ===== Bottom navigation mounting ===== */
 
+
+<script>
 /* v14: fixed要素をレイアウトコンテナ外へ移動し、iPhone Safariでviewport固定を保証 */
 (function(){
   function mountBottomNav(){
@@ -3841,22 +3849,26 @@ function getHolidayName(d){ return japaneseHolidays(d.getFullYear()).get(dateKey
   window.addEventListener('pageshow',mountBottomNav);
   window.addEventListener('orientationchange',()=>setTimeout(mountBottomNav,100));
 })();
+</script>
 
-/* ===== Cache cleanup ===== */
 
-/* Legacy cache cleanup: this app now loads directly from the current HTML. */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(registration => registration.unregister()));
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(key => caches.delete(key)));
-      }
-    } catch (error) {
-      console.warn('legacy cache cleanup skipped:', error);
+<script>
+/* v2.0.4.30: 古いサービスワーカーとキャッシュだけを解除。画面・保存処理は変更しない。 */
+window.addEventListener('load', async () => {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
     }
-  }, { once: true });
-}</script></body>
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+  } catch (error) {
+    console.warn('cache cleanup skipped:', error);
+  }
+});
+</script>
+</body>
 </html>
+
