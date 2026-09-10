@@ -259,6 +259,8 @@
     #refundPolicy p{margin:0}
     #refundPolicy ul{margin:8px 0 0;padding-left:22px}
     #refundPolicy .refund-close{float:right;min-width:44px;min-height:36px;padding:4px 8px;border:1px solid #d7e3f1;border-radius:8px;background:#fff;color:#1768c9;cursor:pointer;font-size:14px}
+      .card.rules-card{background:#f2f2f2;border-color:#ddd}
+    .rules-card > .rule{margin:0;padding:0;border:0}
   </style>
 </head>
 <body>
@@ -311,7 +313,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card rules-card" aria-label="ご利用ルール">
       <div class="rule">
         <div class="rule-title">ご利用ルール</div>
         <ul>
@@ -326,6 +328,9 @@
         </ul>
         <button type="button" class="refund-link" onclick="document.getElementById('refundPolicy').showModal()">返金・キャンセルについて</button>
       </div>
+      </section>
+
+    <section class="card">
       <h2 class="form-title">質問を入力してください</h2>
       <p class="form-desc">気になることを、できるだけ具体的にご入力ください。</p>
 
