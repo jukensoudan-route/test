@@ -238,6 +238,13 @@
     .card .field > div[style],.card .field > button[style] { color:#fff !important; }
     .login-status,.usage-box,.ticket-area,.rule { color:var(--text); }
       #questionModeDropdown { border:2px solid #fff; }
+      #questionModeManual.active{border:2px solid #fff}
+    .question-heading{flex-wrap:wrap}
+    .manual-input-hint{color:#ffe23f;font-size:16px;line-height:1.6;font-weight:800;flex:1 1 240px}
+    .card.usage-card{background:#22b89a;border-color:#22b89a;color:#123c34}
+    .usage-card > .usage-note{color:#123c34}
+    .usage-card .login-status,.usage-card .usage-box{background:#dff7f1;color:#123c34}
+    .usage-card .status-icon,.usage-card .usage-value{color:#087b67}
   </style>
 </head>
 <body>
@@ -256,7 +263,7 @@
   </header>
 
   <main class="page">
-    <section class="card">
+    <section class="card usage-card">
       <div class="login-status" id="loginStatus">
         <div class="status-icon">…</div>
         <div class="status-text">LINE認証を確認しています</div>
@@ -381,7 +388,7 @@
       </div>
 
       <div class="field">
-        <div class="field-label"><span class="num">4</span><span class="icon">💬</span><span>質問内容</span></div>
+        <div class="field-label question-heading"><span class="num">4</span><span class="icon">💬</span><span>質問内容</span><span class="manual-input-hint">「入力ボタン」を押すと、ご自分で入力できます。</span></div>
 
         <div class="question-input-mode">
           <button type="button" id="questionModeDropdown" class="active" onclick="setQuestionMode('dropdown')">
