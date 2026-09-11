@@ -270,6 +270,68 @@
     .usage-card .usage-value{color:#14755d}
     .usage-card .status-icon{background:#d8eee3;color:#14755d}
     .usage-card > .usage-note{color:#49685d}
+  
+    /* 2026-09 TEST design and policy update */
+    .card.usage-card{
+      background:#dff7f1!important;
+      border:3px solid var(--blue)!important;
+      color:#173b34;
+    }
+    .usage-card .login-status,
+    .usage-card .usage-box,
+    .usage-card .ticket-area{
+      background:#dff7f1!important;
+      border:2px solid var(--blue)!important;
+      color:#173b34!important;
+    }
+    .usage-card .usage-label,
+    .usage-card .usage-value,
+    .usage-card .status-icon,
+    .usage-card > .usage-note{color:#174e90!important}
+    .card.rules-card{
+      background:#fff!important;
+      border:3px solid var(--blue)!important;
+      color:var(--text)!important;
+    }
+    .rules-card > .rule{background:#fff!important;color:var(--text)!important}
+    .submit{
+      background:#ffe23f!important;
+      color:#174e90!important;
+      border:3px solid var(--blue)!important;
+      box-shadow:none!important;
+    }
+    .ticket-button{
+      background:var(--blue);
+      border:2px solid var(--blue-dark);
+      box-shadow:none;
+    }
+    .payment-logos{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .pay-label{font-size:14px;font-weight:800;color:#174e90}
+    .pay-mark{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:3px 8px;border:1px solid #c9d9ed;border-radius:7px;background:#fff;font-size:13px;font-weight:900;line-height:1;color:#123}
+    .pay-mark.visa{color:#1434cb;font-style:italic}
+    .pay-mark.jcb{color:#0876bd}
+    .pay-mark.paypay{gap:4px;color:#111}
+    .pay-mark.paypay b{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;background:#ff003c;color:#fff;font-size:12px}
+    .pay-mark.mastercard{gap:0;padding-inline:6px}
+    .pay-mark.mastercard i{display:block;width:17px;height:17px;border-radius:50%;background:#eb001b}
+    .pay-mark.mastercard i+ i{margin-left:-5px;background:#f79e1b;opacity:.9}
+    .policy-links{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:10px}
+    .policy-links .refund-link{margin:0}
+    #answerDisclaimer{width:calc(100% - 24px);max-width:620px;max-height:88vh;margin:auto;padding:22px;border:0;border-radius:16px;background:#fff;color:#172231;overflow-y:auto;font-size:15px;line-height:1.72}
+    #answerDisclaimer::backdrop{background:rgba(15,23,42,.62)}
+    #answerDisclaimer h2{margin:0 0 16px;padding-right:52px;font-size:22px;line-height:1.45;color:#174e90}
+    #answerDisclaimer h3{margin:22px 0 7px;font-size:18px;color:#174e90}
+    #answerDisclaimer p{margin:0 0 12px}
+    #answerDisclaimer ul,#answerDisclaimer ol{margin:8px 0 14px;padding-left:25px}
+    #answerDisclaimer blockquote{margin:12px 0;padding:12px 14px;border-left:4px solid var(--blue);background:#edf5ff}
+    #answerDisclaimer .disclaimer-emphasis{padding:12px;border:2px solid var(--blue);border-radius:10px;background:#fff8c9;text-align:center}
+    #answerDisclaimer .refund-close{float:right;min-width:48px;min-height:38px;padding:5px 10px;border:2px solid var(--blue);border-radius:8px;background:#fff;color:#1768c9;cursor:pointer;font-size:14px;font-weight:800}
+    @media(max-width:600px){
+      .payment-logos{gap:6px}
+      .pay-label{width:100%}
+      #answerDisclaimer{padding:18px 16px}
+    }
+
   </style>
 </head>
 <body>
@@ -282,7 +344,7 @@
         <div class="brand-sub">兵庫県高校受験・進路相談</div>
       </div>
     </div>
-    <h1>受験の不安を、<br>ひとつずつ相談。</h1>
+    <h1>受験の疑問・お悩みを、ひとつずつ解決。</h1>
     <p>志望校選びや合格可能性、学費、入試日程など、気になったことをLINEから気軽にご相談いただけます。</p>
   </header>
 
@@ -309,14 +371,21 @@
       <div class="ticket-area" id="ticketArea">
         <div class="ticket-title">質問回数を追加する</div>
         <div class="ticket-desc">残り回数が0回になったら、必要な回数券をご購入いただけます。</div>
+        <div class="payment-logos" aria-label="クレジットカードとPayPayに対応">
+          <span class="pay-label">クレジットカード</span>
+          <span class="pay-mark visa" aria-label="Visa">VISA</span>
+          <span class="pay-mark mastercard" aria-label="Mastercard"><i></i><i></i></span>
+          <span class="pay-mark jcb" aria-label="JCB">JCB</span>
+          <span class="pay-mark paypay" aria-label="PayPay"><b>P</b> PayPay</span>
+        </div>
         <div class="ticket-grid">
-          <button type="button" class="ticket-button" onclick="buyTicket('ticket5')">
-            5回券　1,000円
-            <span>1回あたり200円</span>
+          <button type="button" class="ticket-button" onclick="buyTicket('ticket3')">
+            3回券　1,000円
+            <span>1回あたり約333円</span>
           </button>
-          <button type="button" class="ticket-button" onclick="buyTicket('ticket20')">
-            20回券　3,000円
-            <span>1回あたり150円</span>
+          <button type="button" class="ticket-button" onclick="buyTicket('ticket10')">
+            10回券　3,000円
+            <span>1回あたり300円</span>
           </button>
         </div>
       </div>
@@ -335,7 +404,10 @@
           <li>送信前に質問内容を確認し、対象外・不明確・不適切な内容は質問回数を使用せず差し戻します。</li>
           <li>送信完了前は、確認画面で戻って質問を修正したり、送信を取りやめたりできます。</li>
         </ul>
-        <button type="button" class="refund-link" onclick="document.getElementById('refundPolicy').showModal()">返金・キャンセルについて</button>
+        <div class="policy-links">
+          <button type="button" class="refund-link" onclick="document.getElementById('refundPolicy').showModal()">返金・キャンセルについて</button>
+          <button type="button" class="refund-link" onclick="document.getElementById('answerDisclaimer').showModal()">回答内容についての免責</button>
+        </div>
       </div>
       </section>
 
@@ -2000,5 +2072,45 @@
       <li>その他、当方の責任による明確な不具合が確認された場合</li>
     </ul>
   </dialog>
+
+  <dialog id="answerDisclaimer" aria-labelledby="answerDisclaimerTitle">
+    <form method="dialog"><button class="refund-close" aria-label="回答内容についての免責を閉じる">閉じる</button></form>
+    <h2 id="answerDisclaimerTitle">回答内容についての免責</h2>
+    <p>ROUTE Q&amp;Aは、高校受験・学校選びに関する情報提供および保護者の判断を支援するサービスです。</p>
+    <p>回答作成時点で確認できる学校公式情報、兵庫県教育委員会等の公的情報、ROUTEが保有する資料その他の情報をもとに回答します。</p>
+    <p>ただし、入試制度、募集人数、学費、学校説明会、推薦条件、進学実績その他の情報は変更される場合があります。最終的な出願・受験・入学手続き等については、必ず学校・教育委員会等が公表する最新の公式情報をご確認ください。</p>
+    <p>また、ROUTEの回答は、</p>
+    <p class="disclaimer-emphasis"><strong>合格、不合格、進学先、推薦取得、入試結果その他の結果を保証するものではありません。</strong></p>
+    <p>特に、次の内容は、過去の実績・公開情報・各種資料をもとにした参考情報であり、将来の結果を保証するものではありません。</p>
+    <ul>
+      <li>合格可能性</li>
+      <li>合格ライン</li>
+      <li>内申点の目安</li>
+      <li>当日点の目安</li>
+      <li>学校の難易度</li>
+      <li>部活動の強さ</li>
+      <li>学校比較</li>
+    </ul>
+
+    <h3>質問内容に関するルール</h3>
+    <p>1回のQ&amp;Aにつき、質問は1つまでとします。</p>
+    <p>複数の独立した質問が含まれている場合、内容が不明確な場合、ROUTEのサービス対象外の質問、不適切な質問、公序良俗に反する内容等は、送信前チェックで差し戻す場合があります。</p>
+    <p>なお、送信前に差し戻された質問については、質問回数を消費しません。</p>
+    <p>質問送信後に、利用者側の入力ミス、学校名の間違い、質問内容の変更等が判明した場合は、原則として新しい質問として扱います。</p>
+    <p>これは重要です。例えば、</p>
+    <blockquote>「県立西宮高校と書いたけど、市立西宮高校の間違いでした」</blockquote>
+    <p>というケースを無料再回答にしてしまうと際限がなくなるためです。</p>
+
+    <h3>再回答について</h3>
+    <p>回答後に別の内容を追加で確認したい場合、または新しい条件を加えて回答を求める場合は、<strong>新しい1問として扱います。</strong></p>
+    <p>ただし、ROUTE側の明確な誤りや質問内容の読み違いが確認された場合は、この限りではありません。</p>
+    <p>これで以前話していた「回答が気に入らないから無料でもう一回答えて」というケースを防げます。</p>
+
+    <h3>返金申請</h3>
+    <p>返金または利用回数の復元を希望する場合は、該当する質問と理由を添えてお問い合わせください。</p>
+    <p>内容を確認し、ROUTE側のシステム障害・重複処理・明確な提供不備等が確認された場合に対応します。</p>
+    <p>単に回答内容への評価や結果への不満を理由とする返金には対応しません。</p>
+  </dialog>
+
 </body>
 </html>
