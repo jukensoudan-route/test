@@ -332,6 +332,30 @@
       #answerDisclaimer{padding:18px 16px}
     }
 
+  
+    .line-open-button{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:8px;
+      min-height:46px;
+      padding:8px 15px;
+      border:3px solid #174e90;
+      border-radius:11px;
+      background:#ffe23f;
+      color:#174e90;
+      font-size:16px;
+      font-weight:900;
+      text-decoration:none;
+      box-shadow:none;
+    }
+    .usage-card .status-icon{
+      width:54px;
+      border-radius:11px;
+      font-size:12px;
+      letter-spacing:-.03em;
+    }
+
   </style>
 </head>
 <body>
@@ -620,6 +644,8 @@
   <script>
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyAUKGZK_WK8l_bGs0AEWilwP_Z8WKRaeSsX3iP1dijuReeMAF-rVBIZl-CQYcozDCu3A/exec";
     const LIFF_ID = "2010636994-in5dBoXy";
+    const IS_TEST_PAGE = window.location.pathname.indexOf("/test/route-qa/") !== -1;
+    const LIFF_ENTRY_URL = "https://liff.line.me/2010636994-in5dBoXy";
 
     let lineProfile = null;
     let lineAccessToken = null;
@@ -1987,6 +2013,17 @@
         await liff.init({ liffId:LIFF_ID });
 
         if (!liff.isLoggedIn()) {
+          if (IS_TEST_PAGE) {
+            document.getElementById("loginStatus").innerHTML =
+              '<div class="status-icon">LINE</div>' +
+              '<div class="status-text">TEST画面を表示しています。<br>' +
+              '<a class="line-open-button" href="' + LIFF_ENTRY_URL + '" target="_blank" rel="noopener">LINEでQ&amp;Aを開く</a></div>';
+            document.getElementById("planUsage").textContent = "TEST表示";
+            document.getElementById("remainingUsage").textContent = "－";
+            document.getElementById("ticketArea").style.display = "block";
+            document.getElementById("submitBtn").disabled = true;
+            return;
+          }
           liff.login({ redirectUri:window.location.href });
           return;
         }
